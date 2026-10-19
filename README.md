@@ -1,211 +1,438 @@
-# Worker WageBook
+# Worker WageBook 📱💼
 
-A professional mobile application for managing worker wages, attendance, advances, and salary settlements. Built with React Native and Expo for small-to-medium businesses that employ daily-wage or weekly-wage workers.
+<div align="center">
+  <img src="./assets/logo.png" alt="Worker WageBook Logo" width="120" />
+  <br /><br />
 
-## Features
+  **A modern, offline-first mobile application for managing worker attendance, cash advances, weekly wages, and mid-week differential salary settlements.**
 
-### Core Modules
+  Designed for construction contractors, factory supervisors, site managers, and small-to-medium business owners who employ daily and weekly wage workers.
 
-- **Worker Management** — Create, edit, and manage worker profiles with auto-generated Employee IDs (W-001, W-002...), categories, photos, wage rates, and joining dates
-- **Attendance Tracking** — Mark daily attendance with statuses: Present, Half Day, Absent, Holiday, Leave. Overtime tracking per-entry (auto-calculated or manual amount). Attendance editable within current unsettled week with mandatory reason and full edit history
-- **Advance Tracking** — Record advances with optional reason/notes. Outstanding balance tracked per worker. Advances carry forward across weeks until fully recovered
-- **Salary Calculation & Settlement** — Automated weekly salary computation with detailed breakdown. Configurable rules for half-day pay, holiday pay, overtime multipliers, and advance recovery. Net pay never goes negative. Duplicate settlement prevention with DB-enforced unique constraints
+  <p align="center">
+    <a href="https://expo.dev/artifacts/eas/jMvl-fJoQ7g2plC2UIaEs3pzuvOv4Z8B_yDmldYIkqE.apk"><img src="https://img.shields.io/badge/Download-Android%20APK%20(v1.0.0)-2ea44f?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" /></a>
+    <a href="https://expo.dev/accounts/world_dominator/projects/worker-wagebook/builds/b77cd3ec-da9e-4edf-b449-2ca3926879ce"><img src="https://img.shields.io/badge/EAS%20Build-Passed-4630EB?style=for-the-badge&logo=expo&logoColor=white" alt="EAS Build" /></a>
+  </p>
 
-### Reports & Export
+  <p align="center">
+    <img src="https://img.shields.io/badge/Expo-SDK%2054-000020?style=flat-square&logo=expo" alt="Expo SDK" />
+    <img src="https://img.shields.io/badge/React%20Native-0.81-61DAFB?style=flat-square&logo=react" alt="React Native" />
+    <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/Database-SQLite%20(Local)-003B57?style=flat-square&logo=sqlite" alt="SQLite" />
+    <img src="https://img.shields.io/badge/Offline--First-100%25-success?style=flat-square" alt="Offline-First" />
+    <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
+  </p>
+</div>
 
-- **Weekly Salary Report** — Detailed breakdown of earnings, deductions, and net pay per worker with PDF export
-- **Attendance Report** — Weekly attendance register with status icons and overtime hours
-- **Outstanding Advances Report** — All workers with unpaid advance balances
-- **Cashbook Report** — Weekly cash outflow summary (advances + salary payments)
-- **PDF Export** — Professional HTML-to-PDF reports using expo-print with business branding
-- **CSV Export/Import** — Export workers to CSV, import workers from CSV with validation
+---
 
-### Settings & Configuration
+## 📥 Direct Download (Android APK)
 
-- **Business Profile** — Set business name, owner name, phone, address
-- **Salary Calculation Rules** — Configurable multipliers for half-day, holiday, weekly off, overtime. Advance recovery mode (full/partial with max percentage). Overtime rounding options. Monetary rounding settings
-- **Category Management** — Full CRUD for worker categories with default wage rates
-- **Week Configuration** — Set week start day (Monday/Sunday/Saturday)
-- **Data Backup** — Auto-backup scheduling (daily/weekly/monthly/off), Google Drive integration placeholder
-- **Security** — PIN lock with setup, change, and clear functionality
+You can download and install the standalone preview APK directly on any Android device without Google Play Console or Expo Go:
 
-### Security
+- **Direct APK Download**: [⬇️ Download Worker WageBook v1.0.0 APK](https://expo.dev/artifacts/eas/jMvl-fJoQ7g2plC2UIaEs3pzuvOv4Z8B_yDmldYIkqE.apk)
+- **EAS Cloud Build Logs**: [🔗 View EAS Build #b77cd3ec](https://expo.dev/accounts/world_dominator/projects/worker-wagebook/builds/b77cd3ec-da9e-4edf-b449-2ca3926879ce)
 
-- **PIN Lock** — 4-digit PIN with setup, change, and clear options. No biometric authentication
-- **Audit Trail** — All changes logged with old/new values, timestamp, and editor context
-- **Wage Snapshots** — Wage changes have effective dates; past attendance records retain original wage
+### Installation Instructions
+1. Download the  file using the link above on your Android phone.
+2. Tap the downloaded file to install.
+3. If prompted by Android, enable **"Install from unknown sources"** for your browser or file manager.
+4. Launch **Worker WageBook**, complete the initial 1-minute business setup, set your 4-digit security PIN, and start managing your workforce immediately!
 
-## Tech Stack
+---
 
-- **Framework**: React Native with Expo SDK 54
-- **Language**: TypeScript
-- **Database**: SQLite via expo-sqlite
-- **Navigation**: React Navigation v7 (bottom tabs + stack)
-- **State Management**: Zustand
-- **Date Handling**: date-fns
-- **PDF Generation**: expo-print
-- **File Sharing**: expo-sharing
-- **File Picking**: expo-document-picker
-- **UI Components**: Custom design system (Material Design inspired)
+## 👨‍💻 Developer & Credits
 
-## Project Structure
+- **Lead Developer**: **Vishal G**
+- **Email**: [vishalgovindasamy@gmail.com](mailto:vishalgovindasamy@gmail.com)
+- **Technology & Platform**: React Native, Expo, SQLite, TypeScript
+- **Design Standard**: Custom High-Density Design System inspired by Linear, Khatabook, and Material Design
+
+---
+
+## 📑 Table of Contents
+
+- [Why Worker WageBook?](#-why-worker-wagebook)
+- [Key Features](#-key-features)
+- [Visual Showcase & Screenshots](#-visual-showcase--screenshots)
+  - [Onboarding & Security PIN](#1-onboarding--security-pin)
+  - [Dashboard & Attendance Marking](#2-dashboard--attendance-marking)
+  - [Worker Management & Monthly Calendar](#3-worker-management--monthly-calendar)
+  - [Salary Settlement & Mid-Week Differential Payouts](#4-salary-settlement--mid-week-differential-payouts)
+  - [Reports, Dark Theme & Administration](#5-reports-dark-theme--administration)
+- [Core Functional Modules](#-core-functional-modules)
+  - [1. Security & Authentication](#1-security--authentication)
+  - [2. Worker Directory](#2-worker-directory)
+  - [3. Daily Attendance & Overtime Engine](#3-daily-attendance--overtime-engine)
+  - [4. Advances & Balance Tracking](#4-advances--balance-tracking)
+  - [5. Salary Settlement Engine & Mid-Week Payouts](#5-salary-settlement-engine--mid-week-payouts)
+  - [6. Aligned 7-Column Monthly Calendar](#6-aligned-7-column-monthly-calendar)
+  - [7. Reports & PDF/CSV Export](#7-reports--pdfcsv-export)
+  - [8. Dark Theme & Accessibility](#8-dark-theme--accessibility)
+  - [9. Gesture & 3-Button Navigation](#9-gesture--3-button-navigation)
+  - [10. Factory Reset & Data Management](#10-factory-reset--data-management)
+- [Technology Stack](#-technology-stack)
+- [Database Architecture](#-database-architecture)
+- [Project Structure](#-project-structure)
+- [Getting Started (Development)](#-getting-started-development)
+- [Building with EAS](#-building-with-eas)
+- [License](#-license)
+
+---
+
+## 🌟 Why Worker WageBook?
+
+Managing daily wage workers using paper notebooks (khatas) or generic spreadsheets is tedious, error-prone, and vulnerable to loss:
+- Workers often request cash advances in the middle of the week.
+- Workers sometimes need partial wage payments mid-week, leaving managers confused about how much is owed for remaining days.
+- Overtime calculations are disputed due to a lack of real-time timestamped records.
+- Generic payroll tools are cloud-dependent, slow, bloated with corporate HR features, or require monthly subscriptions.
+
+**Worker WageBook** is purpose-built to solve these exact problems. It is **100% offline-first**, blisteringly fast, guarded by a **4-digit PIN**, and features an innovative **differential settlement engine** that seamlessly handles mid-week payments without double payouts or accounting discrepancies.
+
+---
+
+## ⚡ Key Features
+
+| Capability | What It Does |
+| :--- | :--- |
+| **100% Offline-First** | All data resides in a local SQLite database on your device. Zero internet required to mark attendance, calculate salaries, or generate reports. |
+| **4-Digit Security PIN** | App is protected by a 4-digit PIN with inactivity auto-lock (5 mins) and PIN protection on sensitive actions (Delete Worker, Factory Reset). |
+| **Worker Directory** | Auto-generates sequential IDs (`W-001`, `W-002`...), stores categories, phone numbers, wage rates, and photos. |
+| **Dynamic Filter Chips** | Category filters in the Workers list automatically hide categories with no active workers, preventing empty screens. |
+| **Live Attendance Timestamps** | Marks attendance with 1-tap presets and records dynamic time badges (e.g., *"Marked at 02:45 PM"*). Full edit history with mandatory audit reasons. |
+| **Flexible Overtime** | Track overtime by **Hours** (with configurable 1.5x multiplier) or flat **Rupee Cash Amount** per day. |
+| **Advance Carry-Forward** | Cash advances are tracked per worker and automatically carried forward across weeks until settled. |
+| **Mid-Week Differential Pay** | Pay workers on any day of the week. Future attendance in the same week calculates only remaining differential balance, preventing duplicate payments! |
+| **7-Column Monthly Calendar** | True grid layout (Mon–Sun) with empty leading offsets for accurate day alignment, color-coded badges, and monthly stats. |
+| **PDF & CSV Reports** | Export professional branded PDF reports (Salary Register, Attendance, Advances, Cashbook) and CSV worker rosters. |
+| **Light & Dark Theme** | Fully tuned light and high-contrast dark theme with sharp, readable text across all cards and controls. |
+| **Mobile Navigation Ready** | Fully tested with modern Android Gesture Navigation and traditional 3-Button Navigation bars (`edge-to-edge`). |
+| **Factory Reset** | PIN-gated danger zone option to wipe local database and re-initialize as a brand new app. |
+
+---
+
+## 📸 Visual Showcase & Screenshots
+
+### 1. Onboarding & Security PIN
+
+| Business Setup Onboarding | 4-Digit Security PIN Lock |
+| :---: | :---: |
+| <img src="./screenshots/01_onboarding_setup.png" width="300" alt="Business Setup" /> | <img src="./screenshots/02_pin_lock.png" width="300" alt="PIN Entry" /> |
+| *First-time launch setup for business name, owner info, and week start day.* | *Clean, distraction-free 4-digit PIN security lock with auto-lock protection.* |
+
+---
+
+### 2. Dashboard & Attendance Marking
+
+| Home Dashboard (Light) | Daily Attendance with Timestamps | Overtime Drawer (Hours & Cash) |
+| :---: | :---: | :---: |
+| <img src="./screenshots/03_home_dashboard.png" width="260" alt="Dashboard" /> | <img src="./screenshots/04_attendance_screen.png" width="260" alt="Attendance Screen" /> | <img src="./screenshots/05_attendance_overtime.png" width="260" alt="Overtime Drawer" /> |
+| *Weekly summary, quick actions, attendance ratios, and outstanding advances.* | *Fast 1-tap status selection with live "Marked at..." timestamp badges.* | *Expandable overtime drawer supporting both hourly multipliers and flat cash amounts.* |
+
+---
+
+### 3. Worker Management & Monthly Calendar
+
+| Dynamic Category Filter | 7-Column Monthly Calendar | Delete Worker PIN Confirmation |
+| :---: | :---: | :---: |
+| <img src="./screenshots/06_workers_directory.png" width="260" alt="Worker Directory" /> | <img src="./screenshots/07_worker_monthly_calendar.png" width="260" alt="Monthly Calendar" /> | <img src="./screenshots/08_delete_worker_pin.png" width="260" alt="Delete Worker PIN" /> |
+| *Filter chips only show categories with active workers. Instant search by name or ID.* | *Aligned 7-column grid (Mon–Sun) with color-coded status badges and monthly totals.* | *Security PIN prompt prevents accidental deletion of worker records.* |
+
+---
+
+### 4. Salary Settlement & Mid-Week Differential Payouts
+
+| Weekly Salary Overview | Mid-Week Differential Settlement |
+| :---: | :---: |
+| <img src="./screenshots/09_weekly_salary_overview.png" width="300" alt="Salary Overview" /> | <img src="./screenshots/10_salary_differential_settlement.png" width="300" alt="Differential Settlement" /> |
+| *Comprehensive breakdown: Base Earnings + Overtime - Advance Recovery = Net Payable.* | *Unique "Pay Remaining" button calculates only unsettled differential earnings.* |
+
+---
+
+### 5. Reports, Dark Theme & Administration
+
+| Reports Hub (PDF & CSV) | High-Contrast Dark Theme | Factory Reset Protection |
+| :---: | :---: | :---: |
+| <img src="./screenshots/11_reports_hub.png" width="260" alt="Reports Screen" /> | <img src="./screenshots/12_settings_dark_theme.png" width="260" alt="Dark Mode Settings" /> | <img src="./screenshots/15_factory_reset_modal.png" width="260" alt="Factory Reset Modal" /> |
+| *Export Salary Slips, Attendance Registers, Advances, and Cashbook summaries to PDF.* | *Polished Dark Mode with carefully calibrated contrast for bright outdoor job sites.* | *PIN-guarded Danger Zone to safely wipe all local data and reset to initial state.* |
+
+| Dark Mode Attendance | Dark Mode Calendar | Developer Information |
+| :---: | :---: | :---: |
+| <img src="./screenshots/13_dark_mode_attendance.png" width="260" alt="Dark Mode Attendance" /> | <img src="./screenshots/14_dark_mode_calendar.png" width="260" alt="Dark Mode Calendar" /> | <img src="./screenshots/16_about_developer.png" width="260" alt="About Developer" /> |
+| *Attendance marking in dark mode with legible contrast and sharp icons.* | *7-column monthly grid rendered in dark mode with color-coded indicators.* | *About developer modal with contact details for Vishal G.* |
+
+---
+
+## 🔍 Core Functional Modules
+
+### 1. Security & Authentication
+- **Initial Setup**: First-time users set a 4-digit PIN along with their business name.
+- **Inactivity Auto-Lock**: Automatically locks the app after 5 minutes of background/inactivity to protect sensitive wage data.
+- **Action Guards**: Critical actions like deleting a worker or performing a factory data reset require PIN verification before execution.
+- **Change PIN**: Change your security PIN at any time from **Settings > Security & PIN**.
+
+### 2. Worker Directory
+- **Sequential IDs**: Automatic employee numbering (`W-001`, `W-002`, `W-003`...).
+- **Profiles**: Store full name, contact number, category, daily wage rate, joining date, and avatar photo.
+- **Active-Only Category Filters**: Horizontal filter chips dynamically populate based only on categories that currently contain active workers. Categories with 0 workers are cleanly omitted.
+- **Safe Worker Deletion**: Replaces generic deactivation with an explicit "Delete Worker" workflow guarded by a 4-digit PIN confirmation modal.
+
+### 3. Daily Attendance & Overtime Engine
+- **Attendance Statuses**:
+  - `Present`: Full daily wage
+  - `Half Day`: Configurable fraction (default `0.5x`)
+  - `Absent`: Zero wage
+  - `Holiday`: Paid holiday multiplier (default `1.0x`)
+  - `Weekly Off`: Paid weekly off multiplier (default `1.0x`)
+  - `Leave`: Approved leave tracking
+- **Real-Time Timestamps**: Displays exact time of marking (e.g., *"Marked at 08:30 AM"*).
+- **Overtime Tracking**:
+  - Hourly OT: Enter overtime hours; calculated as `(daily_wage / 8) * hours * 1.5`.
+  - Cash OT: Enter a direct rupee amount (e.g. `₹250`) directly added to gross earnings.
+- **Audit Logging**: Any attendance edit requires an explanation reason, recorded in `attendance_edits` with previous status, new status, timestamp, and reason.
+
+### 4. Advances & Balance Tracking
+- Record cash advances given to workers on any date with an optional note/reason.
+- Displays real-time **Outstanding Balance** for every worker on their profile and in the Salary Settlement screen.
+- Advances carry forward automatically across weeks until fully recovered through confirmed weekly salary settlements.
+
+### 5. Salary Settlement Engine & Mid-Week Payouts
+The salary engine calculates:
+- **Gross Earnings**: Sum of (`Daily Wage` × `Status Multiplier`) + `Overtime Earnings`
+- **Advance Recovery**: Minimum of (`Outstanding Advances`, `Gross Earnings` × `Max Recovery %`)
+- **Net Payable**: `Gross Earnings` - `Advance Recovery` *(Guaranteed: Net Pay is never negative)*
+
+#### The Mid-Week Differential Settlement Innovation:
+In real-world job sites, a worker might request payment on Wednesday instead of waiting for the weekend. In conventional apps, paying on Wednesday creates problems: marking attendance on Thursday and Friday either zeroes out or double-counts the week.
+- **How Worker WageBook Solves This**:
+  1. If a worker is paid on Wednesday, the app records a locked settlement up to Wednesday.
+  2. When attendance is marked on Thursday, the engine identifies that a prior settlement exists for this week.
+  3. It automatically calculates only the **differential earnings** earned after Wednesday, along with any newly taken advances.
+  4. The UI displays the remaining balance with a **"Pay Remaining"** button instead of "Confirm & Pay".
+  5. Upon confirmation, a differential settlement item is recorded without duplicate payouts or balance erasure!
+
+### 6. Aligned 7-Column Monthly Calendar
+- Located in each worker's profile under the **Monthly Calendar** tab.
+- **True Calendar Grid**: Computes the first day of the selected month and places empty offset cells so the 1st of the month falls on the exact day of the week (Mon–Sun).
+- **Day Badges**: Color-coded circles indicating Present (Green), Half Day (Orange), Absent (Red), Holiday (Blue), Weekly Off (Purple), Leave (Yellow).
+- **Summary Header**: Displays total Present days, Half days, Absent days, and Overtime hours for that month.
+
+### 7. Reports & PDF/CSV Export
+- **Weekly Salary Register**: Line-by-line breakdown of attendance, overtime, gross pay, advance recovery, and net payable.
+- **Attendance Register**: Daily status register for all workers across the selected week.
+- **Outstanding Advances**: Summary of all workers who have active advance debt.
+- **Cashbook Outflow**: Weekly accounting log of total cash disbursed (advances + net salaries).
+- **Professional PDF Export**: Generated using `expo-print` with clean HTML tables, business name, and print date.
+- **CSV Import/Export**: Export worker rosters to CSV or import bulk workers with validation.
+
+### 8. Dark Theme & Accessibility
+- **Theme Selector**: Choose between **Light** and **Dark** mode in **Settings > Appearance**.
+- **WCAG-Compliant Contrast**: Text, subheadings, chips, and borders are carefully calibrated with `#E0E0E0` and `#FFFFFF` on dark backgrounds (`#121212` and `#1E1E1E`), ensuring complete legibility even in bright sunlight.
+- **Consistent Tokens**: Centralized color palette in `theme.ts` applied across all screens, modals, and list items.
+
+### 9. Gesture & 3-Button Navigation
+- Wrap-around with `GestureHandlerRootView` and `SafeAreaProvider`.
+- Full compatibility with:
+  - Modern Android edge-to-edge gesture navigation (back swipe, home swipe).
+  - Classic Android 3-button navigation bars (Back, Home, Recents).
+- Tab bar and modals have bottom padding to prevent system navigation bar overlap.
+
+### 10. Factory Reset & Data Management
+- Accessible in **Settings > Danger Zone**.
+- Prompts for the 4-digit security PIN.
+- Purges all tables, drops the SQLite database, resets the in-memory store, and transitions back to the initial Business Setup onboarding flow.
+
+---
+
+## 🛠 Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Mobile Framework** | [React Native 0.81](https://reactnative.dev/) with [Expo SDK 54](https://expo.dev/) |
+| **Language** | [TypeScript 5.9](https://www.typescriptlang.org/) |
+| **Local Database** | [expo-sqlite](https://docs.expo.dev/versions/latest/sdk/sqlite/) (SQLite 3 with Foreign Keys) |
+| **Navigation** | [@react-navigation/native-stack](https://reactnavigation.org/) + [@react-navigation/bottom-tabs](https://reactnavigation.org/) (v7) |
+| **State Management** | [Zustand](https://github.com/pmndrs/zustand) (with persistent storage hooks) |
+| **Date & Time** | [date-fns](https://date-fns.org/) |
+| **Document & PDF** | [expo-print](https://docs.expo.dev/versions/latest/sdk/print/) + [expo-sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) |
+| **Icons** | [@expo/vector-icons (MaterialIcons)](https://icons.expo.fyi/) |
+| **Build Tooling** | [EAS Build (Expo Application Services)](https://expo.dev/eas) |
+
+---
+
+## 🗄 Database Architecture
+
+Worker WageBook operates entirely on an embedded SQLite database (`wagebook.db`) with relational integrity and foreign keys enabled:
+
+```mermaid
+erDiagram
+    WORKERS ||--o{ ATTENDANCE : "has"
+    WORKERS ||--o{ ADVANCES : "takes"
+    WORKERS ||--o{ SALARY_SETTLEMENTS : "settles"
+    WORKER_CATEGORIES ||--o{ WORKERS : "categorizes"
+    ATTENDANCE ||--o{ ATTENDANCE_EDITS : "audited by"
+    SALARY_SETTLEMENTS ||--o{ SETTLEMENT_ITEMS : "contains"
+
+    WORKERS {
+        int id PK
+        string employee_id UK
+        string name
+        int category_id FK
+        real daily_wage
+        string phone
+        string photo_uri
+        int is_active
+        string created_at
+    }
+
+    ATTENDANCE {
+        int id PK
+        int worker_id FK
+        string date
+        string status
+        real daily_wage_snapshot
+        real overtime_hours
+        real overtime_amount
+        string marked_at
+    }
+
+    ADVANCES {
+        int id PK
+        int worker_id FK
+        real amount
+        string date
+        string reason
+        int is_recovered
+    }
+
+    SALARY_SETTLEMENTS {
+        int id PK
+        int worker_id FK
+        string week_start
+        string week_end
+        real gross_salary
+        real advance_deduction
+        real net_salary
+        int is_locked
+        string paid_at
+    }
+```
+
+### Database Tables Breakdown
+
+| Table | Purpose | Key Constraints |
+| :--- | :--- | :--- |
+| `workers` | Master worker directory with auto-generated IDs | `UNIQUE(employee_id)`, `is_active IN (0,1)` |
+| `worker_categories` | Custom worker skill categories | `name TEXT NOT NULL`, default wage rate |
+| `attendance` | Daily attendance and snapshot wages | `UNIQUE(worker_id, date)`, FK to `workers` |
+| `attendance_edits` | Full audit trail of modified attendance records | Old status, new status, timestamp, mandatory edit reason |
+| `advances` | Cash advances disbursed to workers | Amount, date, reason, recovery tracking |
+| `salary_settlements` | Weekly and differential settlement records | `UNIQUE(worker_id, week_start, week_end)` for locked |
+| `settlement_items` | Itemized line-items per settlement | Base wage, overtime amount, advance deductions |
+| `salary_calculation_rules` | Multipliers and calculation configurations | Half-day, holiday, weekly-off, OT multipliers |
+| `settings` | Key-value store for app configuration | Business name, week start day, PIN hash, theme mode |
+| `audit_log` | Comprehensive system mutation journal | Entity, action, timestamp, old/new value snapshots |
+
+
+## 📁 Project Structure
 
 ```
 worker-wagebook/
-├── App.tsx                          # Entry point with GestureHandlerRootView + DB init
-├── app.json                         # Expo configuration
+├── App.tsx                          # App root with ThemeProvider & NavigationContainer
+├── app.json                         # Expo configuration (permissions, icons, EAS project ID)
+├── eas.json                         # EAS Build configuration (APK preview profile)
 ├── package.json                     # Dependencies and scripts
-├── tsconfig.json                    # TypeScript configuration
-├── src/
-│   ├── constants/
-│   │   ├── theme.ts                 # Design tokens (colors, spacing, typography, shadows)
-│   │   └── helpers.ts               # Utility functions (formatCurrency, date helpers, etc.)
-│   ├── database/
-│   │   ├── database.ts              # SQLite connection, schema, migrations, seed data
-│   │   └── schema.ts                # Table definitions and types
-│   ├── services/
-│   │   ├── workerService.ts         # Worker CRUD operations
-│   │   ├── attendanceService.ts     # Attendance marking, editing, history
-│   │   ├── advanceService.ts        # Advance recording, balance tracking
-│   │   ├── salaryService.ts         # Salary calculation engine with all rules
-│   │   ├── settingsService.ts       # App settings and salary rules management
-│   │   ├── categoryService.ts       # Worker category CRUD
-│   │   ├── pdfService.ts            # PDF export with professional HTML templates
-│   │   └── csvService.ts            # CSV export/import with validation
-│   ├── stores/
-│   │   └── appStore.ts              # Zustand store (current week, PIN state, etc.)
-│   ├── types/
-│   │   └── index.ts                 # TypeScript interfaces and types
-│   ├── utils/
-│   │   └── helpers.ts               # Shared utility functions
-│   ├── components/
-│   │   └── ui/
-│   │       └── index.tsx            # Reusable UI components (Card, Button, Badge, Avatar, etc.)
-│   ├── screens/
-│   │   ├── index.ts                 # Barrel exports for all screens
-│   │   ├── auth/
-│   │   │   └── PinLockScreen.tsx    # PIN entry/setup screen
-│   │   ├── home/
-│   │   │   └── HomeScreen.tsx       # Dashboard with week overview and quick actions
-│   │   ├── workers/
-│   │   │   ├── WorkersListScreen.tsx    # Workers list with search/filter
-│   │   │   ├── AddWorkerScreen.tsx      # Add/edit worker form
-│   │   │   └── WorkerProfileScreen.tsx  # Worker detail with tabs
-│   │   ├── attendance/
-│   │   │   └── AttendanceScreen.tsx     # Daily attendance marking
-│   │   ├── advances/
-│   │   │   └── RecordAdvanceScreen.tsx  # Record new advance
-│   │   ├── salary/
-│   │   │   └── WeeklySalaryScreen.tsx   # Salary settlement with preview/confirm
-│   │   ├── reports/
-│   │   │   ├── ReportsScreen.tsx        # Reports menu
-│   │   │   └── ReportSubScreens.tsx     # Weekly, Attendance, Advances, Cashbook reports
-│   │   └── settings/
-│   │       ├── SettingsScreen.tsx       # Settings menu
-│   │       ├── SettingsSubScreens.tsx   # Business profile, Change PIN, Salary rules, Backup
-│   │       └── CategoryManagementScreen.tsx  # Category CRUD
-│   └── navigation/
-│       └── AppNavigator.tsx         # Tab + Stack navigation setup
+├── tsconfig.json                    # Strict TypeScript configuration
+├── screenshots/                     # Curated high-res mobile application screenshots
+├── assets/                          # App icons, splash screens, and brand logo
+└── src/
+    ├── constants/
+    │   ├── theme.ts                 # Light & Dark color palettes, typography, spacing
+    │   └── helpers.ts               # Date helpers, currency formatters, validation
+    ├── database/
+    │   ├── database.ts              # SQLite connection, schema migrations, and reset
+    │   └── schema.ts                # TypeScript table interfaces and queries
+    ├── services/
+    │   ├── workerService.ts         # Worker CRUD and dynamic category queries
+    │   ├── attendanceService.ts     # Attendance marking, edit reasons, and history
+    │   ├── advanceService.ts        # Advance payments and balance tracking
+    │   ├── salaryService.ts         # Weekly calculation & differential settlement engine
+    │   ├── settingsService.ts       # Business profile, calculation rules, PIN logic
+    │   ├── categoryService.ts       # Worker category CRUD
+    │   ├── pdfService.ts            # HTML-to-PDF report generation
+    │   └── csvService.ts            # Worker roster CSV import/export
+    ├── stores/
+    │   └── appStore.ts              # Zustand global store (theme, PIN state, active week)
+    ├── navigation/
+    │   └── AppNavigator.tsx         # Bottom tabs + Stack navigation with theme bindings
+    ├── screens/
+    │   ├── auth/PinLockScreen.tsx       # 4-digit PIN lock & authentication screen
+    │   ├── home/HomeScreen.tsx          # Dashboard with week stats & quick actions
+    │   ├── workers/
+    │   │   ├── WorkersListScreen.tsx    # Worker roster with active category chips & search
+    │   │   ├── AddWorkerScreen.tsx      # Add/edit worker form
+    │   │   └── WorkerProfileScreen.tsx  # Worker tabs: Overview, Advances, 7-Col Calendar
+    │   ├── attendance/AttendanceScreen.tsx # Daily attendance marking with live timestamps
+    │   ├── salary/WeeklySalaryScreen.tsx   # Settlement list, breakdown & "Pay Remaining"
+    │   ├── reports/
+    │   │   ├── ReportsScreen.tsx        # Reports menu
+    │   │   └── ReportSubScreens.tsx     # Salary, Attendance, Advances, Cashbook reports
+    │   └── settings/
+    │       ├── SettingsScreen.tsx       # Settings menu (Appearance, PIN, Rules, Danger Zone)
+    │       ├── SettingsSubScreens.tsx   # Business Profile, PIN Change, Calculation Rules
+    │       └── CategoryManagementScreen.tsx # Manage worker categories
+    └── components/
+        └── ui/index.tsx             # Theme-aware Card, Button, Badge, Modal, Input, Avatar
 ```
 
-## Database Schema
+---
 
-### Core Tables
-
-| Table | Purpose |
-|-------|---------|
-| `workers` | Worker profiles with name, employee_id, category, wage, photo |
-| `worker_categories` | Custom categories with default wage rates |
-| `attendance` | Daily attendance records with status, overtime, wage snapshot |
-| `attendance_edits` | Edit history with old/new values and reason |
-| `advances` | Advance records with amount, reason, recovery tracking |
-| `salary_settlements` | Weekly salary records (draft/locked) with gross/net amounts |
-| `settlement_items` | Line-by-line breakdown of each settlement |
-| `salary_calculation_rules` | Configurable calculation parameters |
-| `settings` | Key-value app settings |
-| `audit_log` | System-wide audit trail for all data changes |
-
-### Key Constraints
-
-- **Settlement Uniqueness**: `UNIQUE(worker_id, week_start, week_end) WHERE is_locked=1` prevents duplicate confirmed settlements
-- **Wage Snapshots**: Attendance records store `daily_wage` at time of marking; future wage changes don't affect past records
-- **Advance Balance**: Outstanding balance computed from advances minus recoveries in locked settlements
-- **Audit Logging**: All mutations create audit_log entries with old/new values
-
-## Getting Started
+## 💻 Getting Started (Development)
 
 ### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+- [Expo CLI](https://docs.expo.dev/more/expo-cli/) (`npm install -g expo-cli`)
 
-- Node.js 18+
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
-
-### Installation
-
+### 1. Clone & Install
 ```bash
+git clone https://github.com/world_dominator/worker-wagebook.git
 cd worker-wagebook
 npm install
 ```
 
-### Run Development Server
-
+### 2. Start Development Server
 ```bash
-# Web (recommended for development)
+# Web browser development (Fastest way to test)
 npx expo start --web --port 8081
 
-# Mobile (requires Expo Go app or simulator)
+# Mobile development with Expo Go (Scan QR code with Expo Go app)
 npx expo start
 ```
 
-### Build for Production
+---
 
-```bash
-# Android APK
-eas build --platform android --profile preview
+## 📦 Building with EAS
 
-# iOS (requires Apple Developer account)
-eas build --platform ios
+To build a standalone installable Android `.apk` using Expo Application Services (EAS):
 
-# Web
-npx expo export --platform web
-```
+1. **Install EAS CLI**:
+   ```bash
+   npm install -g eas-cli
+   ```
+2. **Login to Expo**:
+   ```bash
+   eas login
+   ```
+3. **Build Android Preview APK**:
+   ```bash
+   eas build --platform android --profile preview
+   ```
+4. EAS Build compiles the native binaries in the cloud and provides a direct download link for the `.apk` file upon completion.
 
-## Salary Calculation Rules
+---
 
-The salary engine supports configurable rules stored in the `salary_calculation_rules` table:
+## 📄 License
 
-| Rule | Default | Description |
-|------|---------|-------------|
-| `half_day_multiplier` | 0.5 | Fraction of daily wage for half-day work |
-| `holiday_pay_multiplier` | 1.0 | Fraction of daily wage paid on holidays |
-| `weekly_off_day` | sunday | Day of the week for weekly off |
-| `weekly_off_pay_multiplier` | 1.0 | Fraction of daily wage paid on weekly off |
-| `paid_leave_allowed_per_month` | 2 | Number of paid leaves per month |
-| `overtime_default_multiplier` | 1.5 | Default overtime rate multiplier |
-| `overtime_rounding` | none | Rounding mode: none, nearest_half, nearest_hour |
-| `advance_recovery_mode` | full | Recovery mode: full or partial |
-| `advance_recovery_max_percent` | 50 | Max % of gross earnings recoverable (partial mode) |
-| `carry_forward_unrecovered_advances` | 1 | Whether to carry forward unpaid advance balance |
-| `monetary_rounding` | none | Rounding for final amounts: none, rupee, paisa |
-
-### Salary Calculation Flow
-
-1. **Load attendance** for the worker in the given week
-2. **Calculate daily earnings** per attendance record using snapshot wage and status multipliers
-3. **Add overtime** earnings (additive to base wage, not a replacement status)
-4. **Sum gross earnings** across all attendance days
-5. **Calculate advance recovery**: `min(outstanding_balance, max_recovery)` where `max_recovery` depends on recovery mode
-6. **Ensure net pay >= 0**: If deductions exceed earnings, reduce recovery amount
-7. **Create settlement** with line items for each earning/deduction component
-
-## Design Principles
-
-- **No emojis in UI** — Uses MaterialIcons throughout
-- **Functional, data-dense** — No decorative gradients or AI-generated feel
-- **Professional quality** — Inspired by Cred, Khatabook, Linear design standards
-- **English only** — No Tamil or multilingual support
-- **PIN lock only** — No biometric authentication
-
-## License
-
-Private — All rights reserved.
+**Private & Proprietary** — All rights reserved.  
+Developed by **Vishal G** ([vishalgovindasamy@gmail.com](mailto:vishalgovindasamy@gmail.com)).
