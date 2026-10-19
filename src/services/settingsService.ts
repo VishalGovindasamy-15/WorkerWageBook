@@ -132,4 +132,13 @@ export const settingsService = {
   async setAutoBackupSchedule(schedule: string): Promise<void> {
     await this.setSetting('auto_backup_schedule', schedule);
   },
+
+  // Theme Settings
+  async getThemeMode(): Promise<'light' | 'dark' | 'system'> {
+    return ((await this.getSetting('theme_mode')) as any) || 'system';
+  },
+
+  async setThemeMode(mode: 'light' | 'dark' | 'system'): Promise<void> {
+    await this.setSetting('theme_mode', mode);
+  },
 };

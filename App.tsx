@@ -9,6 +9,7 @@ import { SplashScreen } from './src/screens/SplashScreen';
 import { initializeDatabase } from './src/database/database';
 import { seedService } from './src/services/seedService';
 import { colors } from './src/constants/theme';
+import { useAppStore } from './src/stores/appStore';
 
 // Suppress specific warnings in development
 LogBox.ignoreLogs([
@@ -18,13 +19,14 @@ LogBox.ignoreLogs([
 export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const { isDark, themeColors, initTheme } = useAppStore();
 
   useEffect(() => {
     async function init() {
       try {
         await initializeDatabase();
         console.log('[App] Database initialized');
-        await seedService.seedDemoData();
+        await initTheme();
       } catch (error) {
         console.error('[App] Database initialization failed:', error);
       } finally {
@@ -54,12 +56,12 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-    <GestureHandlerRootView style={styles.root}>
+    <GestureHandlerRootView style={[styles.root, { backgroundColor: isDark ? '#020617' : (Platform.OS === 'web' ? '#f1f5f9' : colors.white) }]}>
       <StatusBar 
-        barStyle="dark-content" 
-        {...(Platform.OS !== 'web' && { backgroundColor: colors.white })} 
+        barStyle={isDark ? "light-content" : "dark-content"} 
+        {...(Platform.OS !== 'web' && { backgroundColor: isDark ? themeColors.background : colors.white })} 
       />
-      <View style={styles.mobileContainer}>
+      <View style={[styles.mobileContainer, { backgroundColor: themeColors.background }]}>
         <AppNavigator />
       </View>
     </GestureHandlerRootView>

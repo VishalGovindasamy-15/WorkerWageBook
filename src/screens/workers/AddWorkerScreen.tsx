@@ -11,7 +11,7 @@ import { useAppStore } from '../../stores/appStore';
 import { Category } from '../../types';
 
 export function AddWorkerScreen({ route, navigation }: any) {
-  const { showToast } = useAppStore();
+  const { showToast, isDark, themeColors } = useAppStore();
   const workerId = route?.params?.workerId;
   const isEditMode = Boolean(workerId);
 
@@ -133,10 +133,10 @@ export function AddWorkerScreen({ route, navigation }: any) {
   const selectedCategory = categories.find((c) => c.id === categoryId);
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.content}>
         {/* Required Section */}
-        <Text style={styles.sectionLabel}>REQUIRED</Text>
+        <Text style={[styles.sectionLabel, isDark && { color: themeColors.textMuted }]}>REQUIRED</Text>
 
         <TextInput
           label="Name"
@@ -152,7 +152,7 @@ export function AddWorkerScreen({ route, navigation }: any) {
         />
 
         {/* Optional Details Section */}
-        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }]}>OPTIONAL DETAILS</Text>
+        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>OPTIONAL DETAILS</Text>
 
         <TextInput
           label="Employee ID"
@@ -164,30 +164,42 @@ export function AddWorkerScreen({ route, navigation }: any) {
 
         {/* Category Picker */}
         <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Category</Text>
+          <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>Category</Text>
           <TouchableOpacity
-            style={styles.pickerButton}
+            style={[
+              styles.pickerButton,
+              isDark && {
+                backgroundColor: themeColors.inputBg,
+                borderColor: themeColors.inputBorder,
+              },
+            ]}
             onPress={() => setShowCategoryPicker(!showCategoryPicker)}
           >
-            <Text style={selectedCategory ? styles.pickerText : styles.pickerPlaceholder}>
+            <Text
+              style={[
+                selectedCategory ? styles.pickerText : styles.pickerPlaceholder,
+                isDark && { color: selectedCategory ? themeColors.text : themeColors.textMuted },
+              ]}
+            >
               {selectedCategory?.name || 'Select category'}
             </Text>
             <Ionicons
               name={showCategoryPicker ? 'chevron-up' : 'chevron-down'}
               size={20}
-              color={colors.neutral[500]}
+              color={isDark ? themeColors.textMuted : colors.neutral[500]}
             />
           </TouchableOpacity>
-          <Text style={styles.inputHelper}>For filtering and grouping</Text>
+          <Text style={[styles.inputHelper, isDark && { color: themeColors.textMuted }]}>For filtering and grouping</Text>
 
           {showCategoryPicker && (
-            <Card style={styles.categoryDropdown} padding={0}>
+            <Card style={[styles.categoryDropdown, isDark && { borderColor: themeColors.cardBorder }]} padding={0}>
               {categories.map((cat) => (
                 <TouchableOpacity
                   key={cat.id}
                   style={[
                     styles.categoryOption,
-                    categoryId === cat.id && styles.categoryOptionSelected,
+                    isDark && { borderBottomColor: themeColors.border },
+                    categoryId === cat.id && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.15)' } : styles.categoryOptionSelected),
                   ]}
                   onPress={() => {
                     setCategoryId(cat.id);
@@ -197,18 +209,19 @@ export function AddWorkerScreen({ route, navigation }: any) {
                   <Text
                     style={[
                       styles.categoryOptionText,
-                      categoryId === cat.id && styles.categoryOptionTextSelected,
+                      isDark && { color: themeColors.text },
+                      categoryId === cat.id && (isDark ? { color: '#60A5FA', fontWeight: '600' } : styles.categoryOptionTextSelected),
                     ]}
                   >
                     {cat.name}
                   </Text>
                   {categoryId === cat.id && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary[600]} />
+                    <Ionicons name="checkmark" size={20} color={isDark ? '#60A5FA' : colors.primary[600]} />
                   )}
                 </TouchableOpacity>
               ))}
               <TouchableOpacity
-                style={styles.addCategoryOption}
+                style={[styles.addCategoryOption, isDark && { borderTopColor: themeColors.border }]}
                 onPress={() => {
                   setShowCategoryPicker(false);
                   Alert.prompt
@@ -228,8 +241,8 @@ export function AddWorkerScreen({ route, navigation }: any) {
                     : Alert.alert('Add Category', 'Category management is available in Settings');
                 }}
               >
-                <Ionicons name="add-circle-outline" size={20} color={colors.primary[600]} />
-                <Text style={styles.addCategoryText}>Add new category</Text>
+                <Ionicons name="add-circle-outline" size={20} color={isDark ? '#60A5FA' : colors.primary[600]} />
+                <Text style={[styles.addCategoryText, isDark && { color: '#60A5FA' }]}>Add new category</Text>
               </TouchableOpacity>
             </Card>
           )}
@@ -248,7 +261,7 @@ export function AddWorkerScreen({ route, navigation }: any) {
         />
 
         {/* Payment Section */}
-        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }]}>PAYMENT</Text>
+        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>PAYMENT</Text>
 
         <TextInput
           label="Daily Wage (Rs.)"
@@ -272,7 +285,7 @@ export function AddWorkerScreen({ route, navigation }: any) {
         />
 
         {/* Other Section */}
-        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }]}>OTHER</Text>
+        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>OTHER</Text>
 
         <TextInput
           label="Notes"

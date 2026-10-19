@@ -20,7 +20,7 @@ import { useAppStore } from '../../stores/appStore';
 import { formatCurrency } from '../../utils/helpers';
 
 export function RecordAdvanceScreen({ navigation }: any) {
-  const { showToast } = useAppStore();
+  const { showToast, isDark, themeColors } = useAppStore();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
@@ -86,24 +86,35 @@ export function RecordAdvanceScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.content}>
         {/* Worker Selection */}
-        <Text style={styles.sectionLabel}>WORKER</Text>
+        <Text style={[styles.sectionLabel, isDark && { color: themeColors.textMuted }]}>WORKER</Text>
         <TouchableOpacity
-          style={styles.pickerButton}
+          style={[
+            styles.pickerButton,
+            isDark && {
+              backgroundColor: themeColors.inputBg,
+              borderColor: themeColors.inputBorder,
+            },
+          ]}
           onPress={() => setShowWorkerPicker(!showWorkerPicker)}
         >
           <View style={styles.pickerContent}>
             <Ionicons
               name="person"
               size={20}
-              color={selectedWorker ? colors.neutral[900] : colors.neutral[400]}
+              color={
+                selectedWorker
+                  ? (isDark ? themeColors.text : colors.neutral[900])
+                  : (isDark ? themeColors.textMuted : colors.neutral[400])
+              }
             />
             <Text
               style={[
                 styles.pickerText,
-                !selectedWorker && styles.pickerPlaceholder,
+                isDark && { color: themeColors.text },
+                !selectedWorker && (isDark ? { color: themeColors.textMuted } : styles.pickerPlaceholder),
               ]}
             >
               {selectedWorker
@@ -114,19 +125,20 @@ export function RecordAdvanceScreen({ navigation }: any) {
           <Ionicons
             name={showWorkerPicker ? 'chevron-up' : 'chevron-down'}
             size={20}
-            color={colors.neutral[500]}
+            color={isDark ? themeColors.textMuted : colors.neutral[500]}
           />
         </TouchableOpacity>
 
         {showWorkerPicker && (
-          <Card style={styles.workerDropdown} padding={0}>
+          <Card style={[styles.workerDropdown, isDark && { borderColor: themeColors.cardBorder }]} padding={0}>
             <ScrollView style={{ maxHeight: 200 }}>
               {workers.map((worker) => (
                 <TouchableOpacity
                   key={worker.id}
                   style={[
                     styles.workerOption,
-                    selectedWorkerId === worker.id && styles.workerOptionSelected,
+                    isDark && { borderBottomColor: themeColors.border },
+                    selectedWorkerId === worker.id && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.15)' } : styles.workerOptionSelected),
                   ]}
                   onPress={() => {
                     setSelectedWorkerId(worker.id);
@@ -134,11 +146,11 @@ export function RecordAdvanceScreen({ navigation }: any) {
                   }}
                 >
                   <View>
-                    <Text style={styles.workerOptionName}>{worker.name}</Text>
-                    <Text style={styles.workerOptionId}>{worker.employee_id}</Text>
+                    <Text style={[styles.workerOptionName, isDark && { color: themeColors.text }]}>{worker.name}</Text>
+                    <Text style={[styles.workerOptionId, isDark && { color: themeColors.textMuted }]}>{worker.employee_id}</Text>
                   </View>
                   {selectedWorkerId === worker.id && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary[600]} />
+                    <Ionicons name="checkmark" size={20} color={isDark ? '#60A5FA' : colors.primary[600]} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -148,17 +160,17 @@ export function RecordAdvanceScreen({ navigation }: any) {
 
         {/* Outstanding Balance Display */}
         {selectedWorkerId && (
-          <Card style={styles.balanceCard}>
+          <Card style={[styles.balanceCard, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
             <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>Current Outstanding</Text>
-              <Text style={styles.balanceAmount}>
+              <Text style={[styles.balanceLabel, isDark && { color: themeColors.textSecondary }]}>Current Outstanding</Text>
+              <Text style={[styles.balanceAmount, isDark && { color: themeColors.text }]}>
                 {formatCurrency(outstandingBalance)}
               </Text>
             </View>
             {amount && !isNaN(parseFloat(amount)) && (
               <View style={styles.balanceRow}>
-                <Text style={styles.balanceLabel}>After this advance</Text>
-                <Text style={[styles.balanceAmount, { color: colors.danger[600] }]}>
+                <Text style={[styles.balanceLabel, isDark && { color: themeColors.textSecondary }]}>After this advance</Text>
+                <Text style={[styles.balanceAmount, { color: isDark ? '#F87171' : colors.danger[600] }]}>
                   {formatCurrency(outstandingBalance + parseFloat(amount))}
                 </Text>
               </View>
@@ -167,7 +179,7 @@ export function RecordAdvanceScreen({ navigation }: any) {
         )}
 
         {/* Amount */}
-        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }]}>AMOUNT</Text>
+        <Text style={[styles.sectionLabel, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>AMOUNT</Text>
         <TextInput
           label="Amount (Rs.)"
           placeholder="0"
@@ -178,14 +190,15 @@ export function RecordAdvanceScreen({ navigation }: any) {
         />
 
         {/* Payment Method */}
-        <Text style={styles.inputLabel}>Payment Method</Text>
+        <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>Payment Method</Text>
         <View style={styles.paymentMethods}>
           {(['cash', 'upi', 'bank'] as const).map((method) => (
             <TouchableOpacity
               key={method}
               style={[
                 styles.paymentMethodButton,
-                paymentMethod === method && styles.paymentMethodButtonActive,
+                isDark && { backgroundColor: themeColors.inputBg, borderColor: themeColors.border },
+                paymentMethod === method && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.paymentMethodButtonActive),
               ]}
               onPress={() => setPaymentMethod(method)}
             >
@@ -200,14 +213,15 @@ export function RecordAdvanceScreen({ navigation }: any) {
                 size={20}
                 color={
                   paymentMethod === method
-                    ? colors.primary[600]
-                    : colors.neutral[600]
+                    ? (isDark ? '#60A5FA' : colors.primary[600])
+                    : (isDark ? themeColors.textMuted : colors.neutral[600])
                 }
               />
               <Text
                 style={[
                   styles.paymentMethodText,
-                  paymentMethod === method && styles.paymentMethodTextActive,
+                  isDark && { color: themeColors.textMuted },
+                  paymentMethod === method && (isDark ? { color: '#60A5FA', fontWeight: '600' } : styles.paymentMethodTextActive),
                 ]}
               >
                 {method.toUpperCase()}

@@ -11,11 +11,13 @@ import { TextInput, Button, Card } from '../../components/ui';
 import { settingsService } from '../../services/settingsService';
 import { salaryService } from '../../services/salaryService';
 import { SalaryCalculationRules } from '../../types';
+import { useAppStore } from '../../stores/appStore';
 
 // ============================================================
 // BUSINESS PROFILE SCREEN
 // ============================================================
 export function BusinessProfileScreen({ navigation }: any) {
+  const { isDark, themeColors } = useAppStore();
   const [businessName, setBusinessName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +47,7 @@ export function BusinessProfileScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.content}>
         <TextInput
           label="Business Name"
@@ -72,6 +74,7 @@ export function BusinessProfileScreen({ navigation }: any) {
 // CHANGE PIN SCREEN
 // ============================================================
 export function ChangePinScreen({ navigation }: any) {
+  const { isDark, themeColors } = useAppStore();
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -111,7 +114,7 @@ export function ChangePinScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.content}>
         <TextInput
           label="Current PIN"
@@ -160,6 +163,7 @@ export function ChangePinScreen({ navigation }: any) {
 // SALARY RULES SCREEN
 // ============================================================
 export function SalaryRulesScreen({ navigation }: any) {
+  const { isDark, themeColors } = useAppStore();
   const [rules, setRules] = useState<SalaryCalculationRules | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -192,16 +196,16 @@ export function SalaryRulesScreen({ navigation }: any) {
 
   if (loading || !rules) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.loadingText, isDark && { color: themeColors.textMuted }]}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.content}>
-        <Text style={styles.sectionTitle}>ATTENDANCE</Text>
+        <Text style={[styles.sectionTitle, isDark && { color: themeColors.textMuted }]}>ATTENDANCE</Text>
 
         <TextInput
           label="Half-day Multiplier"
@@ -250,7 +254,7 @@ export function SalaryRulesScreen({ navigation }: any) {
           helperText="0 = all leave is unpaid"
         />
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }]}>OVERTIME</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>OVERTIME</Text>
 
         <TextInput
           label="Overtime Default Multiplier"
@@ -271,7 +275,7 @@ export function SalaryRulesScreen({ navigation }: any) {
           helperText="Options: exact, nearest_half, nearest_hour"
         />
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }]}>ADVANCE RECOVERY</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>ADVANCE RECOVERY</Text>
 
         <TextInput
           label="Recovery Mode"
@@ -302,7 +306,7 @@ export function SalaryRulesScreen({ navigation }: any) {
           helperText="1 = yes, carry to next week; 0 = no, write off"
         />
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }]}>ROUNDING</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>ROUNDING</Text>
 
         <TextInput
           label="Monetary Rounding"
@@ -328,6 +332,7 @@ export function SalaryRulesScreen({ navigation }: any) {
 // GOOGLE DRIVE BACKUP SCREEN (Placeholder)
 // ============================================================
 export function GoogleDriveBackupScreen() {
+  const { isDark, themeColors } = useAppStore();
   const [lastBackup, setLastBackup] = useState<string | null>(null);
   const [stats, setStats] = useState<{
     workers: number;
@@ -426,17 +431,17 @@ export function GoogleDriveBackupScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: spacing[8] }}>
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]} contentContainerStyle={{ paddingBottom: spacing[8] }}>
       <View style={styles.content}>
         {/* Status Card */}
-        <Card style={styles.backupStatusCard}>
+        <Card style={[styles.backupStatusCard, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
           <View style={styles.backupStatusHeader}>
-            <View style={styles.backupIconBox}>
-              <Ionicons name="cloud-done" size={28} color={colors.primary[600]} />
+            <View style={[styles.backupIconBox, isDark && { backgroundColor: themeColors.surface, borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
+              <Ionicons name="cloud-done" size={28} color={isDark ? '#60A5FA' : colors.primary[600]} />
             </View>
             <View style={{ flex: 1, marginLeft: spacing[3] }}>
-              <Text style={styles.backupStatusTitle}>Database & Cloud Backup</Text>
-              <Text style={styles.backupStatusSub}>
+              <Text style={[styles.backupStatusTitle, isDark && { color: themeColors.text }]}>Database & Cloud Backup</Text>
+              <Text style={[styles.backupStatusSub, isDark && { color: themeColors.textSecondary }]}>
                 {lastBackup
                   ? `Last Backup: ${format(parseISO(lastBackup), 'dd MMM yyyy, h:mm a')}`
                   : 'No backup taken yet'}
@@ -444,22 +449,22 @@ export function GoogleDriveBackupScreen() {
             </View>
           </View>
 
-          <View style={styles.backupStatsGrid}>
+          <View style={[styles.backupStatsGrid, isDark && { borderTopColor: themeColors.border }]}>
             <View style={styles.backupStatItem}>
-              <Text style={styles.backupStatVal}>{stats.workers}</Text>
-              <Text style={styles.backupStatLbl}>Workers</Text>
+              <Text style={[styles.backupStatVal, isDark && { color: themeColors.text }]}>{stats.workers}</Text>
+              <Text style={[styles.backupStatLbl, isDark && { color: themeColors.textMuted }]}>Workers</Text>
             </View>
             <View style={styles.backupStatItem}>
-              <Text style={styles.backupStatVal}>{stats.attendance}</Text>
-              <Text style={styles.backupStatLbl}>Attendance</Text>
+              <Text style={[styles.backupStatVal, isDark && { color: themeColors.text }]}>{stats.attendance}</Text>
+              <Text style={[styles.backupStatLbl, isDark && { color: themeColors.textMuted }]}>Attendance</Text>
             </View>
             <View style={styles.backupStatItem}>
-              <Text style={styles.backupStatVal}>{stats.advances}</Text>
-              <Text style={styles.backupStatLbl}>Advances</Text>
+              <Text style={[styles.backupStatVal, isDark && { color: themeColors.text }]}>{stats.advances}</Text>
+              <Text style={[styles.backupStatLbl, isDark && { color: themeColors.textMuted }]}>Advances</Text>
             </View>
             <View style={styles.backupStatItem}>
-              <Text style={styles.backupStatVal}>{stats.settlements}</Text>
-              <Text style={styles.backupStatLbl}>Settlements</Text>
+              <Text style={[styles.backupStatVal, isDark && { color: themeColors.text }]}>{stats.settlements}</Text>
+              <Text style={[styles.backupStatLbl, isDark && { color: themeColors.textMuted }]}>Settlements</Text>
             </View>
           </View>
         </Card>
@@ -467,10 +472,10 @@ export function GoogleDriveBackupScreen() {
         {/* Action 1: Export */}
         <Card style={styles.actionCard}>
           <View style={styles.actionHeader}>
-            <Ionicons name="download-outline" size={24} color={colors.primary[600]} />
-            <Text style={styles.actionTitle}>Create Full Database Backup</Text>
+            <Ionicons name="download-outline" size={24} color={isDark ? '#60A5FA' : colors.primary[600]} />
+            <Text style={[styles.actionTitle, isDark && { color: themeColors.text }]}>Create Full Database Backup</Text>
           </View>
-          <Text style={styles.actionDesc}>
+          <Text style={[styles.actionDesc, isDark && { color: themeColors.textSecondary }]}>
             Generates a complete, secure snapshot of all workers, attendance history, advance ledgers, and salary settlements into a portable JSON backup file.
           </Text>
           <Button
@@ -486,10 +491,10 @@ export function GoogleDriveBackupScreen() {
         {/* Action 2: Restore */}
         <Card style={styles.actionCard}>
           <View style={styles.actionHeader}>
-            <Ionicons name="refresh-circle-outline" size={24} color={colors.warning[600]} />
-            <Text style={styles.actionTitle}>Restore from Backup</Text>
+            <Ionicons name="refresh-circle-outline" size={24} color={isDark ? '#FBBF24' : colors.warning[600]} />
+            <Text style={[styles.actionTitle, isDark && { color: themeColors.text }]}>Restore from Backup</Text>
           </View>
-          <Text style={styles.actionDesc}>
+          <Text style={[styles.actionDesc, isDark && { color: themeColors.textSecondary }]}>
             Load a previously saved Worker WageBook .json backup file to restore your entire database state on this device.
           </Text>
           <Button
@@ -504,9 +509,9 @@ export function GoogleDriveBackupScreen() {
         </Card>
 
         {/* Cloud Info */}
-        <Card style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Google Drive & Cloud Storage</Text>
-          <Text style={styles.infoText}>
+        <Card style={[styles.infoCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
+          <Text style={[styles.infoTitle, isDark && { color: '#60A5FA' }]}>Google Drive & Cloud Storage</Text>
+          <Text style={[styles.infoText, isDark && { color: themeColors.textSecondary }]}>
             When you tap "Save / Share Backup", on Android & iOS your device will offer you the option to save directly to your Google Drive account, iCloud, or Files. On Web, the backup file is instantly downloaded to your Downloads folder.
           </Text>
         </Card>

@@ -11,10 +11,12 @@ import {
   ViewStyle,
   TextStyle,
   TextInputProps as RNTextInputProps,
+  StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, shadows, typography } from '../../constants/theme';
 import { getInitials } from '../../utils/helpers';
+import { useAppStore } from '../../stores/appStore';
 
 // ============================================================
 // BUTTON
@@ -42,6 +44,8 @@ export function Button({
   fullWidth = false,
   style,
 }: ButtonProps) {
+  const { isDark } = useAppStore();
+
   const sizeStyles = {
     sm: { paddingVertical: 8, paddingHorizontal: 16, height: 36 },
     md: { paddingVertical: 12, paddingHorizontal: 24, height: 48 },
@@ -61,16 +65,16 @@ export function Button({
     },
     secondary: {
       container: {
-        backgroundColor: colors.white,
+        backgroundColor: isDark ? 'transparent' : colors.white,
         borderRadius: borderRadius.md,
         borderWidth: 1.5,
-        borderColor: colors.primary[500],
+        borderColor: isDark ? colors.primary[500] : colors.primary[500],
       },
-      text: { color: colors.primary[600] },
+      text: { color: isDark ? '#60A5FA' : colors.primary[600] },
     },
     text: {
       container: { backgroundColor: 'transparent' },
-      text: { color: colors.primary[600] },
+      text: { color: isDark ? '#60A5FA' : colors.primary[600] },
     },
     danger: {
       container: { backgroundColor: colors.danger[600], borderRadius: borderRadius.md },
@@ -123,16 +127,18 @@ export function Button({
 // ============================================================
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   padding?: number;
   noShadow?: boolean;
 }
 
 export function Card({ children, style, padding = spacing[4], noShadow = false }: CardProps) {
+  const { isDark, themeColors } = useAppStore();
   return (
     <View
       style={[
         styles.card,
+        isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
         { padding },
         !noShadow && shadows.md,
         style,
@@ -162,12 +168,13 @@ export function TextInput({
   containerStyle,
   ...props
 }: TextInputProps) {
+  const { isDark, themeColors } = useAppStore();
   const [isFocused, setIsFocused] = React.useState(false);
 
   return (
     <View style={[styles.inputContainer, containerStyle]}>
       {label && (
-        <Text style={styles.inputLabel}>
+        <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>
           {label}
           {required && <Text style={{ color: colors.danger[500] }}> *</Text>}
         </Text>
@@ -184,15 +191,22 @@ export function TextInput({
         }}
         style={[
           styles.textInput,
+          isDark && {
+            backgroundColor: themeColors.inputBg,
+            borderColor: themeColors.inputBorder,
+            color: themeColors.text,
+          },
           isFocused && styles.textInputFocused,
           error && styles.textInputError,
           props.editable === false && styles.textInputDisabled,
           props.style as any,
         ]}
-        placeholderTextColor={colors.neutral[400]}
+        placeholderTextColor={isDark ? themeColors.textMuted : colors.neutral[400]}
       />
       {error && <Text style={styles.inputError}>{error}</Text>}
-      {helperText && !error && <Text style={styles.inputHelper}>{helperText}</Text>}
+      {helperText && !error && (
+        <Text style={[styles.inputHelper, isDark && { color: themeColors.textMuted }]}>{helperText}</Text>
+      )}
     </View>
   );
 }
@@ -207,6 +221,7 @@ interface AvatarProps {
 }
 
 export function Avatar({ name, size = 'md' }: AvatarProps) {
+  const { isDark, themeColors } = useAppStore();
   const sizes = {
     sm: { width: 32, height: 32, fontSize: 12 },
     md: { width: 48, height: 48, fontSize: 16 },
@@ -219,6 +234,7 @@ export function Avatar({ name, size = 'md' }: AvatarProps) {
     <View
       style={[
         styles.avatar,
+        isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border, borderWidth: 1 },
         {
           width: sizes[size].width,
           height: sizes[size].height,
@@ -226,7 +242,7 @@ export function Avatar({ name, size = 'md' }: AvatarProps) {
         },
       ]}
     >
-      <Text style={[styles.avatarText, { fontSize: sizes[size].fontSize }]}>
+      <Text style={[styles.avatarText, isDark && { color: themeColors.text }, { fontSize: sizes[size].fontSize }]}>
         {initials}
       </Text>
     </View>
@@ -243,13 +259,24 @@ interface BadgeProps {
 }
 
 export function Badge({ label, variant = 'neutral', size = 'sm' }: BadgeProps) {
-  const variantStyles = {
-    success: { bg: colors.success[50], text: colors.success[600] },
-    warning: { bg: colors.warning[50], text: colors.warning[600] },
-    danger: { bg: colors.danger[50], text: colors.danger[600] },
-    info: { bg: colors.info[50], text: colors.info[500] },
-    neutral: { bg: colors.neutral[100], text: colors.neutral[600] },
+  const { isDark } = useAppStore();
+  const lightVariantStyles = {
+    success: { bg: colors.success[50], text: colors.success[700] },
+    warning: { bg: colors.warning[50], text: colors.warning[700] },
+    danger: { bg: colors.danger[50], text: colors.danger[700] },
+    info: { bg: colors.info[50], text: colors.info[700] },
+    neutral: { bg: colors.neutral[100], text: colors.neutral[700] },
   };
+
+  const darkVariantStyles = {
+    success: { bg: 'rgba(34, 197, 94, 0.2)', text: '#4ADE80' },
+    warning: { bg: 'rgba(234, 179, 8, 0.2)', text: '#FBBF24' },
+    danger: { bg: 'rgba(239, 68, 68, 0.2)', text: '#F87171' },
+    info: { bg: 'rgba(59, 130, 246, 0.2)', text: '#60A5FA' },
+    neutral: { bg: 'rgba(255, 255, 255, 0.1)', text: '#E2E8F0' },
+  };
+
+  const variantStyles = isDark ? darkVariantStyles : lightVariantStyles;
 
   const sizeStyles = {
     sm: { paddingVertical: 2, paddingHorizontal: 8, height: 20 },
@@ -267,7 +294,7 @@ export function Badge({ label, variant = 'neutral', size = 'sm' }: BadgeProps) {
       <Text
         style={[
           styles.badgeText,
-          { color: variantStyles[variant].text },
+          { color: variantStyles[variant].text, fontWeight: '600' },
           size === 'sm' ? { fontSize: 11 } : { fontSize: 13 },
         ]}
       >
@@ -288,16 +315,18 @@ interface StatCardProps {
 }
 
 export function StatCard({ value, label, accentColor, style }: StatCardProps) {
+  const { isDark, themeColors } = useAppStore();
   return (
     <View
       style={[
         styles.statCard,
+        isDark && { backgroundColor: themeColors.statCardBg, borderColor: themeColors.cardBorder },
         accentColor && { borderLeftColor: accentColor, borderLeftWidth: 4 },
         style,
       ]}
     >
-      <Text style={styles.statValue} numberOfLines={1}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, isDark && { color: themeColors.text }]} numberOfLines={1}>{value}</Text>
+      <Text style={[styles.statLabel, isDark && { color: themeColors.textSecondary }]}>{label}</Text>
     </View>
   );
 }
@@ -312,12 +341,13 @@ interface SectionHeaderProps {
 }
 
 export function SectionHeader({ title, action, onActionPress }: SectionHeaderProps) {
+  const { isDark, themeColors } = useAppStore();
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={[styles.sectionTitle, isDark && { color: themeColors.textSecondary }]}>{title}</Text>
       {action && (
         <TouchableOpacity onPress={onActionPress}>
-          <Text style={styles.sectionAction}>{action}</Text>
+          <Text style={[styles.sectionAction, isDark && { color: colors.primary[500] }]}>{action}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -342,11 +372,12 @@ export function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const { isDark, themeColors } = useAppStore();
   return (
     <View style={styles.emptyState}>
-      <Ionicons name={icon} size={80} color={colors.neutral[300]} />
-      <Text style={styles.emptyTitle}>{title}</Text>
-      {description && <Text style={styles.emptyDescription}>{description}</Text>}
+      <Ionicons name={icon} size={80} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
+      <Text style={[styles.emptyTitle, isDark && { color: themeColors.text }]}>{title}</Text>
+      {description && <Text style={[styles.emptyDescription, isDark && { color: themeColors.textSecondary }]}>{description}</Text>}
       {actionLabel && onAction && (
         <Button title={actionLabel} onPress={onAction} style={{ marginTop: spacing[4] }} />
       )}
@@ -362,7 +393,8 @@ interface DividerProps {
 }
 
 export function Divider({ style }: DividerProps) {
-  return <View style={[styles.divider, style]} />;
+  const { isDark, themeColors } = useAppStore();
+  return <View style={[styles.divider, isDark && { backgroundColor: themeColors.divider }, style]} />;
 }
 
 // ============================================================

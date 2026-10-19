@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -27,7 +28,7 @@ import {
   isSameDay,
 } from 'date-fns';
 import { colors, spacing, typography, borderRadius, shadows } from '../../constants/theme';
-import { Avatar, Badge, Card, StatCard, Divider, Button } from '../../components/ui';
+import { Avatar, Badge, Card, StatCard, Divider, Button, TextInput } from '../../components/ui';
 import { formatCurrency, formatDate, formatRelativeTime } from '../../utils/helpers';
 import { workerService } from '../../services/workerService';
 import { categoryService } from '../../services/categoryService';
@@ -41,7 +42,7 @@ import { Worker, Category, AuditLog, Attendance, SalarySettlement } from '../../
 
 export function WorkerProfileScreen({ route, navigation }: any) {
   const { workerId } = route.params;
-  const { currentWeek, weekStartsOn } = useAppStore();
+  const { currentWeek, weekStartsOn, showToast, isDark, themeColors } = useAppStore();
 
   const [worker, setWorker] = useState<Worker | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
@@ -49,6 +50,12 @@ export function WorkerProfileScreen({ route, navigation }: any) {
   const [weeklyCalc, setWeeklyCalc] = useState<SalaryCalculation | null>(null);
   const [weeklySettlement, setWeeklySettlement] = useState<SalarySettlement | undefined>(undefined);
   const [recentActivity, setRecentActivity] = useState<AuditLog[]>([]);
+
+  // Delete worker PIN modal state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletePin, setDeletePin] = useState('');
+  const [deletePinError, setDeletePinError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Weekly attendance records
   const [weeklyAttendance, setWeeklyAttendance] = useState<Record<string, Attendance>>({});
@@ -165,28 +172,38 @@ export function WorkerProfileScreen({ route, navigation }: any) {
     }
   };
 
-  const handleDeactivate = () => {
-    Alert.alert(
-      worker?.is_active ? 'Deactivate Worker' : 'Reactivate Worker',
-      worker?.is_active
-        ? 'This worker will be hidden from attendance and salary screens. Existing records will be preserved.'
-        : 'This worker will be visible again in attendance and salary screens.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: worker?.is_active ? 'Deactivate' : 'Reactivate',
-          style: worker?.is_active ? 'destructive' : 'default',
-          onPress: async () => {
-            if (worker?.is_active) {
-              await workerService.deactivate(workerId);
-            } else {
-              await workerService.reactivate(workerId);
-            }
-            loadWorker();
-          },
-        },
-      ]
-    );
+  const handleDeleteWorkerClick = () => {
+    setDeletePin('');
+    setDeletePinError('');
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDeleteWithPin = async () => {
+    if (deletePin.length !== 4) {
+      setDeletePinError('Please enter your 4-digit App PIN');
+      return;
+    }
+    const isValid = await settingsService.verifyPin(deletePin);
+    if (!isValid) {
+      setDeletePinError('Incorrect PIN. Please try again.');
+      return;
+    }
+    setDeleteModalVisible(false);
+    await executeDeleteWorker();
+  };
+
+  const executeDeleteWorker = async () => {
+    setIsDeleting(true);
+    try {
+      await workerService.delete(workerId);
+      showToast('Worker deleted permanently', 'success');
+      navigation.goBack();
+    } catch (err) {
+      console.error('Failed to delete worker:', err);
+      Alert.alert('Error', 'Failed to delete worker. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (!worker) return null;
@@ -222,14 +239,14 @@ export function WorkerProfileScreen({ route, navigation }: any) {
   });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: spacing[8] }}>
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]} contentContainerStyle={{ paddingBottom: spacing[8] }}>
       {/* Profile Header */}
-      <View style={styles.profileHeader}>
+      <View style={[styles.profileHeader, isDark && { backgroundColor: themeColors.surface, borderBottomColor: themeColors.border }]}>
         <Avatar name={worker.name} size="lg" />
-        <Text style={styles.workerName}>{worker.name}</Text>
+        <Text style={[styles.workerName, isDark && { color: themeColors.text }]}>{worker.name}</Text>
         <View style={styles.workerMeta}>
-          <Text style={styles.workerId}>{worker.employee_id || 'ID Pending'}</Text>
-          {category && <Text style={styles.workerCategory}> · {category.name}</Text>}
+          <Text style={[styles.workerId, isDark && { color: themeColors.textMuted }]}>{worker.employee_id || 'ID Pending'}</Text>
+          {category && <Text style={[styles.workerCategory, isDark && { color: themeColors.textSecondary }]}> · {category.name}</Text>}
         </View>
         <View style={styles.badgeWrapper}>
           <Badge
@@ -240,12 +257,12 @@ export function WorkerProfileScreen({ route, navigation }: any) {
         </View>
         {worker.phone && (
           <TouchableOpacity style={styles.phoneLink}>
-            <Ionicons name="call" size={16} color={colors.primary[600]} />
-            <Text style={styles.phoneText}>{worker.phone}</Text>
+            <Ionicons name="call" size={16} color={colors.primary[500]} />
+            <Text style={[styles.phoneText, isDark && { color: '#60A5FA' }]}>{worker.phone}</Text>
           </TouchableOpacity>
         )}
         {worker.joining_date && (
-          <Text style={styles.joiningDate}>Joined {formatDate(worker.joining_date, 'MMM yyyy')}</Text>
+          <Text style={[styles.joiningDate, isDark && { color: themeColors.textMuted }]}>Joined {formatDate(worker.joining_date, 'MMM yyyy')}</Text>
         )}
 
         {/* Download Payslip Button */}
@@ -262,7 +279,7 @@ export function WorkerProfileScreen({ route, navigation }: any) {
       </View>
 
       {/* Weekly Stats */}
-      <Text style={styles.sectionTitle}>THIS WEEK ({currentWeek.label})</Text>
+      <Text style={[styles.sectionTitle, isDark && { color: themeColors.textSecondary }]}>THIS WEEK ({currentWeek.label})</Text>
       <View style={styles.statsGrid}>
         <View style={styles.statsRow}>
           <StatCard value={daysWorkedDisplay} label="Days Worked" />
@@ -286,7 +303,7 @@ export function WorkerProfileScreen({ route, navigation }: any) {
       </View>
 
       {/* WEEKLY ATTENDANCE STRIP */}
-      <Text style={styles.sectionTitle}>WEEKLY ATTENDANCE STRIP</Text>
+      <Text style={[styles.sectionTitle, isDark && { color: themeColors.textSecondary }]}>WEEKLY ATTENDANCE STRIP</Text>
       <Card style={styles.stripCard}>
         <View style={styles.stripRow}>
           {weekDays.map((day) => {
@@ -297,42 +314,45 @@ export function WorkerProfileScreen({ route, navigation }: any) {
             const isTodayDate = isSameDay(day, new Date());
 
             let badgeText = '-';
-            let badgeBg = colors.neutral[100];
-            let badgeColor = colors.neutral[400];
+            let badgeBg = isDark ? themeColors.surface : colors.neutral[100];
+            let badgeColor = isDark ? themeColors.textMuted : colors.neutral[400];
 
             if (record) {
               if (record.status === 'present') {
                 badgeText = 'P';
-                badgeBg = colors.success[200];
-                badgeColor = colors.success[800];
+                badgeBg = isDark ? 'rgba(74, 222, 128, 0.2)' : colors.success[200];
+                badgeColor = isDark ? '#4ADE80' : colors.success[800];
               } else if (record.status === 'half_day') {
                 badgeText = '½';
-                badgeBg = colors.warning[200];
-                badgeColor = colors.warning[800];
+                badgeBg = isDark ? 'rgba(251, 191, 36, 0.2)' : colors.warning[200];
+                badgeColor = isDark ? '#FBBF24' : colors.warning[800];
               } else if (record.status === 'absent') {
                 badgeText = 'A';
-                badgeBg = colors.danger[200];
-                badgeColor = colors.danger[700];
+                badgeBg = isDark ? 'rgba(248, 113, 113, 0.2)' : colors.danger[200];
+                badgeColor = isDark ? '#F87171' : colors.danger[700];
               } else if (record.status === 'holiday') {
                 badgeText = 'HOL';
-                badgeBg = colors.primary[100];
-                badgeColor = colors.primary[800];
+                badgeBg = isDark ? 'rgba(96, 165, 250, 0.2)' : colors.primary[100];
+                badgeColor = isDark ? '#60A5FA' : colors.primary[800];
               } else if (record.status === 'leave') {
                 badgeText = 'L';
-                badgeBg = colors.neutral[200];
-                badgeColor = colors.neutral[700];
+                badgeBg = isDark ? themeColors.border : colors.neutral[200];
+                badgeColor = isDark ? themeColors.textSecondary : colors.neutral[700];
               }
             }
 
             return (
-              <View key={dateStr} style={[styles.stripDayItem, isTodayDate && styles.stripToday]}>
-                <Text style={styles.stripDayName}>{dayName}</Text>
-                <Text style={styles.stripDayNum}>{dayNum}</Text>
+              <View key={dateStr} style={[
+                styles.stripDayItem,
+                isTodayDate && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderWidth: 1, borderColor: colors.primary[500] } : styles.stripToday),
+              ]}>
+                <Text style={[styles.stripDayName, isDark && { color: themeColors.textMuted }]}>{dayName}</Text>
+                <Text style={[styles.stripDayNum, isDark && { color: themeColors.text }]}>{dayNum}</Text>
                 <View style={[styles.statusBadge, { backgroundColor: badgeBg }]}>
                   <Text style={[styles.statusBadgeText, { color: badgeColor }]}>{badgeText}</Text>
                 </View>
                 {record?.overtime_hours ? (
-                  <Text style={styles.otBadge}>+{record.overtime_hours}h</Text>
+                  <Text style={[styles.otBadge, isDark && { color: '#60A5FA' }]}>+{record.overtime_hours}h</Text>
                 ) : (
                   <View style={{ height: 14 }} />
                 )}
@@ -343,49 +363,49 @@ export function WorkerProfileScreen({ route, navigation }: any) {
       </Card>
 
       {/* MONTHLY CALENDAR GRID */}
-      <Text style={styles.sectionTitle}>MONTHLY ATTENDANCE CALENDAR</Text>
+      <Text style={[styles.sectionTitle, isDark && { color: themeColors.textSecondary }]}>MONTHLY ATTENDANCE CALENDAR</Text>
       <Card style={styles.calendarCard}>
         {/* Month Selector Bar */}
-        <View style={styles.monthHeader}>
+        <View style={[styles.monthHeader, isDark && { borderBottomColor: themeColors.border }]}>
           <TouchableOpacity
             onPress={() => setCalendarMonth(subMonths(calendarMonth, 1))}
             style={styles.monthArrow}
           >
-            <Ionicons name="chevron-back" size={20} color={colors.primary[600]} />
+            <Ionicons name="chevron-back" size={20} color={colors.primary[500]} />
           </TouchableOpacity>
-          <Text style={styles.monthTitle}>{format(calendarMonth, 'MMMM yyyy')}</Text>
+          <Text style={[styles.monthTitle, isDark && { color: themeColors.text }]}>{format(calendarMonth, 'MMMM yyyy')}</Text>
           <TouchableOpacity
             onPress={() => setCalendarMonth(addMonths(calendarMonth, 1))}
             style={styles.monthArrow}
           >
-            <Ionicons name="chevron-forward" size={20} color={colors.primary[600]} />
+            <Ionicons name="chevron-forward" size={20} color={colors.primary[500]} />
           </TouchableOpacity>
         </View>
 
         {/* Monthly Summary Badges */}
         <View style={styles.monthlySummaryRow}>
-          <View style={[styles.summaryPill, { backgroundColor: colors.success[50] }]}>
-            <Text style={[styles.summaryPillVal, { color: colors.success[700] }]}>{monthP}</Text>
-            <Text style={styles.summaryPillLbl}>Present</Text>
+          <View style={[styles.summaryPill, { backgroundColor: isDark ? 'rgba(74, 222, 128, 0.15)' : colors.success[50] }]}>
+            <Text style={[styles.summaryPillVal, { color: isDark ? '#4ADE80' : colors.success[700] }]}>{monthP}</Text>
+            <Text style={[styles.summaryPillLbl, isDark && { color: themeColors.textMuted }]}>Present</Text>
           </View>
-          <View style={[styles.summaryPill, { backgroundColor: colors.warning[50] }]}>
-            <Text style={[styles.summaryPillVal, { color: colors.warning[700] }]}>{monthH}</Text>
-            <Text style={styles.summaryPillLbl}>Half-Day</Text>
+          <View style={[styles.summaryPill, { backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : colors.warning[50] }]}>
+            <Text style={[styles.summaryPillVal, { color: isDark ? '#FBBF24' : colors.warning[700] }]}>{monthH}</Text>
+            <Text style={[styles.summaryPillLbl, isDark && { color: themeColors.textMuted }]}>Half-Day</Text>
           </View>
-          <View style={[styles.summaryPill, { backgroundColor: colors.danger[50] }]}>
-            <Text style={[styles.summaryPillVal, { color: colors.danger[700] }]}>{monthA}</Text>
-            <Text style={styles.summaryPillLbl}>Absent</Text>
+          <View style={[styles.summaryPill, { backgroundColor: isDark ? 'rgba(248, 113, 113, 0.15)' : colors.danger[50] }]}>
+            <Text style={[styles.summaryPillVal, { color: isDark ? '#F87171' : colors.danger[700] }]}>{monthA}</Text>
+            <Text style={[styles.summaryPillLbl, isDark && { color: themeColors.textMuted }]}>Absent</Text>
           </View>
-          <View style={[styles.summaryPill, { backgroundColor: colors.primary[50] }]}>
-            <Text style={[styles.summaryPillVal, { color: colors.primary[700] }]}>{monthOT}h</Text>
-            <Text style={styles.summaryPillLbl}>Overtime</Text>
+          <View style={[styles.summaryPill, { backgroundColor: isDark ? 'rgba(96, 165, 250, 0.15)' : colors.primary[50] }]}>
+            <Text style={[styles.summaryPillVal, { color: isDark ? '#60A5FA' : colors.primary[700] }]}>{monthOT}h</Text>
+            <Text style={[styles.summaryPillLbl, isDark && { color: themeColors.textMuted }]}>Overtime</Text>
           </View>
         </View>
 
         {/* Days of Week Header */}
         <View style={styles.calendarWeekRow}>
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dayInitial) => (
-            <Text key={dayInitial} style={styles.calendarWeekHeader}>
+            <Text key={dayInitial} style={[styles.calendarWeekHeader, isDark && { color: themeColors.textMuted }]}>
               {dayInitial}
             </Text>
           ))}
@@ -393,7 +413,7 @@ export function WorkerProfileScreen({ route, navigation }: any) {
 
         {/* Grid Days */}
         {monthlyLoading ? (
-          <ActivityIndicator size="small" color={colors.primary[600]} style={{ marginVertical: 20 }} />
+          <ActivityIndicator size="small" color={colors.primary[500]} style={{ marginVertical: 20 }} />
         ) : (
           <View style={styles.calendarGrid}>
             {calendarDays.map((d) => {
@@ -404,20 +424,27 @@ export function WorkerProfileScreen({ route, navigation }: any) {
 
               let dotColor: string | null = null;
               if (rec) {
-                if (rec.status === 'present') dotColor = colors.success[500];
-                else if (rec.status === 'half_day') dotColor = colors.warning[500];
-                else if (rec.status === 'absent') dotColor = colors.danger[500];
-                else if (rec.status === 'holiday') dotColor = colors.primary[500];
-                else if (rec.status === 'leave') dotColor = colors.neutral[500];
+                if (rec.status === 'present') dotColor = isDark ? '#4ADE80' : colors.success[500];
+                else if (rec.status === 'half_day') dotColor = isDark ? '#FBBF24' : colors.warning[500];
+                else if (rec.status === 'absent') dotColor = isDark ? '#F87171' : colors.danger[500];
+                else if (rec.status === 'holiday') dotColor = isDark ? '#60A5FA' : colors.primary[500];
+                else if (rec.status === 'leave') dotColor = isDark ? themeColors.textMuted : colors.neutral[500];
               }
 
               return (
-                <View key={dateKey} style={[styles.calendarDayCell, isToday && styles.todayCell]}>
+                <View
+                  key={dateKey}
+                  style={[
+                    styles.calendarDayCell,
+                    isToday && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderWidth: 1, borderColor: colors.primary[500] } : styles.todayCell),
+                  ]}
+                >
                   <Text
                     style={[
                       styles.calendarDayNum,
-                      !inMonth && styles.dayNumDimmed,
-                      isToday && styles.todayNumText,
+                      isDark && { color: themeColors.text },
+                      !inMonth && (isDark ? { color: themeColors.textMuted, opacity: 0.3 } : styles.dayNumDimmed),
+                      isToday && (isDark ? { color: '#60A5FA' } : styles.todayNumText),
                     ]}
                   >
                     {format(d, 'd')}
@@ -434,7 +461,7 @@ export function WorkerProfileScreen({ route, navigation }: any) {
       </Card>
 
       {/* Details */}
-      <Text style={styles.sectionTitle}>DETAILS</Text>
+      <Text style={[styles.sectionTitle, isDark && { color: themeColors.textSecondary }]}>DETAILS</Text>
       <Card style={styles.detailsCard}>
         <DetailRow
           label="Daily Wage"
@@ -461,18 +488,18 @@ export function WorkerProfileScreen({ route, navigation }: any) {
       </Card>
 
       {/* Recent Activity */}
-      <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+      <Text style={[styles.sectionTitle, isDark && { color: themeColors.textSecondary }]}>RECENT ACTIVITY</Text>
       <Card style={styles.detailsCard}>
         {recentActivity.length === 0 ? (
-          <Text style={styles.noActivity}>No activity yet</Text>
+          <Text style={[styles.noActivity, isDark && { color: themeColors.textMuted }]}>No activity yet</Text>
         ) : (
           recentActivity.map((log, index) => (
             <View key={log.id}>
               <View style={styles.activityItem}>
-                <View style={styles.activityDot} />
+                <View style={[styles.activityDot, isDark && { backgroundColor: colors.primary[500] }]} />
                 <View style={styles.activityContent}>
-                  <Text style={styles.activityAction}>{log.action.replace(/_/g, ' ')}</Text>
-                  <Text style={styles.activityTime}>{formatRelativeTime(log.created_at)}</Text>
+                  <Text style={[styles.activityAction, isDark && { color: themeColors.text }]}>{log.action.replace(/_/g, ' ')}</Text>
+                  <Text style={[styles.activityTime, isDark && { color: themeColors.textMuted }]}>{formatRelativeTime(log.created_at)}</Text>
                 </View>
               </View>
               {index < recentActivity.length - 1 && <Divider style={{ marginLeft: 20 }} />}
@@ -492,22 +519,87 @@ export function WorkerProfileScreen({ route, navigation }: any) {
           style={{ marginBottom: spacing[3] }}
         />
         <Button
-          title={worker.is_active ? 'Deactivate Worker' : 'Reactivate Worker'}
-          onPress={handleDeactivate}
-          variant={worker.is_active ? 'danger' : 'secondary'}
+          title="Delete Worker"
+          onPress={handleDeleteWorkerClick}
+          variant="danger"
           fullWidth
-          icon={worker.is_active ? 'person-remove' : 'person-add'}
+          icon="trash-outline"
         />
       </View>
+
+      {/* Delete Worker PIN Confirmation Modal */}
+      <Modal
+        visible={deleteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setDeleteModalVisible(false)}
+          />
+          <View style={[styles.modalContent, { maxWidth: 360 }, isDark && { backgroundColor: themeColors.card }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="trash" size={24} color={colors.danger[500]} />
+                <Text style={[styles.modalTitle, { color: colors.danger[500] }]}>Delete Worker</Text>
+              </View>
+              <TouchableOpacity onPress={() => setDeleteModalVisible(false)}>
+                <Ionicons name="close" size={24} color={isDark ? themeColors.textSecondary : colors.neutral[500]} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.modalDesc, isDark && { color: themeColors.textSecondary }]}>
+              This will permanently delete {worker.name} and all associated attendance records, advances, and salary history. Enter your 4-digit App PIN to confirm.
+            </Text>
+
+            <TextInput
+              label="Enter 4-Digit App PIN"
+              placeholder="••••"
+              value={deletePin}
+              onChangeText={(t) => {
+                setDeletePin(t);
+                setDeletePinError('');
+              }}
+              keyboardType="number-pad"
+              maxLength={4}
+              secureTextEntry
+              autoFocus
+              error={deletePinError}
+              containerStyle={{ marginBottom: spacing[4] }}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Button
+                title="Cancel"
+                variant="secondary"
+                onPress={() => setDeleteModalVisible(false)}
+                style={{ flex: 1 }}
+              />
+              <Button
+                title={isDeleting ? 'Deleting...' : 'Delete Worker'}
+                variant="danger"
+                onPress={handleConfirmDeleteWithPin}
+                disabled={deletePin.length !== 4 || isDeleting}
+                loading={isDeleting}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
+  const { isDark, themeColors } = useAppStore();
   return (
     <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      <Text style={[styles.detailLabel, isDark && { color: themeColors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.detailValue, isDark && { color: themeColors.text }]}>{value}</Text>
     </View>
   );
 }
@@ -779,5 +871,35 @@ const styles = StyleSheet.create({
   actions: {
     paddingHorizontal: spacing[4],
     marginTop: spacing[6],
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing[4],
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing[4],
+    ...shadows.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing[2],
+  },
+  modalTitle: {
+    ...typography.h3,
+    color: colors.neutral[900],
+  },
+  modalDesc: {
+    ...typography.bodySmall,
+    color: colors.neutral[600],
+    marginBottom: spacing[3],
   },
 });

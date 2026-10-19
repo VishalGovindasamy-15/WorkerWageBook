@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Platform } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,15 +46,19 @@ const ReportsStack = createNativeStackNavigator();
 const SettingsStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 
-const screenOptions = {
-  headerStyle: { backgroundColor: colors.white },
-  headerTintColor: colors.neutral[900],
-  headerTitleStyle: { fontWeight: '600' as const, fontSize: 18 },
-  headerShadowVisible: false,
-  headerBackTitleVisible: false,
-};
+function useDynamicScreenOptions() {
+  const { themeColors } = useAppStore();
+  return {
+    headerStyle: { backgroundColor: themeColors.headerBg },
+    headerTintColor: themeColors.headerText,
+    headerTitleStyle: { fontWeight: '600' as const, fontSize: 18 },
+    headerShadowVisible: false,
+    headerBackTitleVisible: false,
+  };
+}
 
 function HomeStackNavigator() {
+  const screenOptions = useDynamicScreenOptions();
   return (
     <HomeStack.Navigator screenOptions={screenOptions}>
       <HomeStack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
@@ -70,6 +74,7 @@ function HomeStackNavigator() {
 }
 
 function WorkersStackNavigator() {
+  const screenOptions = useDynamicScreenOptions();
   return (
     <WorkersStack.Navigator screenOptions={screenOptions}>
       <WorkersStack.Screen name="WorkersList" component={WorkersListScreen} options={{ title: 'Workers' }} />
@@ -80,6 +85,7 @@ function WorkersStackNavigator() {
 }
 
 function AttendanceStackNavigator() {
+  const screenOptions = useDynamicScreenOptions();
   return (
     <AttendanceStack.Navigator screenOptions={screenOptions}>
       <AttendanceStack.Screen 
@@ -92,6 +98,7 @@ function AttendanceStackNavigator() {
 }
 
 function SalaryStackNavigator() {
+  const screenOptions = useDynamicScreenOptions();
   return (
     <SalaryStack.Navigator screenOptions={screenOptions}>
       <SalaryStack.Screen 
@@ -109,6 +116,7 @@ function SalaryStackNavigator() {
 }
 
 function ReportsStackNavigator() {
+  const screenOptions = useDynamicScreenOptions();
   return (
     <ReportsStack.Navigator screenOptions={screenOptions}>
       <ReportsStack.Screen 
@@ -156,6 +164,7 @@ function ReportsStackNavigator() {
 }
 
 function SettingsStackNavigator() {
+  const screenOptions = useDynamicScreenOptions();
   return (
     <SettingsStack.Navigator screenOptions={screenOptions}>
       <SettingsStack.Screen 
@@ -193,6 +202,7 @@ function SettingsStackNavigator() {
 }
 
 function AuthStackNavigator() {
+  const screenOptions = useDynamicScreenOptions();
   return (
     <AuthStack.Navigator screenOptions={{ ...screenOptions, headerShown: false }}>
       <AuthStack.Screen name="PinLock" component={PinLockScreen} />
@@ -210,12 +220,36 @@ const TAB_ICONS: Record<string, { focused: keyof typeof Ionicons.glyphMap; unfoc
 };
 
 export function AppNavigator() {
-  const { isUnlocked, pinSetupRequired } = useAppStore();
+  const { isUnlocked, isDark, themeColors } = useAppStore();
   const insets = useSafeAreaInsets();
+
+  const navTheme = isDark
+    ? {
+        ...DarkTheme,
+        colors: {
+          ...DarkTheme.colors,
+          primary: colors.primary[500],
+          background: themeColors.background,
+          card: themeColors.surface,
+          text: themeColors.text,
+          border: themeColors.border,
+        },
+      }
+    : {
+        ...DefaultTheme,
+        colors: {
+          ...DefaultTheme.colors,
+          primary: colors.primary[600],
+          background: themeColors.background,
+          card: themeColors.surface,
+          text: themeColors.text,
+          border: themeColors.border,
+        },
+      };
 
   if (!isUnlocked) {
     return (
-      <NavigationContainer>
+      <NavigationContainer theme={navTheme}>
         <AuthStackNavigator />
       </NavigationContainer>
     );
@@ -226,7 +260,7 @@ export function AppNavigator() {
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'web' ? 6 : 8);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <Tab.Navigator
         backBehavior="firstRoute"
         screenOptions={({ route }) => ({
@@ -236,11 +270,11 @@ export function AppNavigator() {
             const iconName = focused ? icons.focused : icons.unfocused;
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: colors.primary[600],
-          tabBarInactiveTintColor: colors.neutral[400],
+          tabBarActiveTintColor: colors.primary[500],
+          tabBarInactiveTintColor: isDark ? themeColors.textMuted : colors.neutral[400],
           tabBarStyle: {
-            backgroundColor: colors.white,
-            borderTopColor: colors.neutral[200],
+            backgroundColor: themeColors.tabBarBg,
+            borderTopColor: themeColors.tabBarBorder,
             height: 56 + bottomInset,
             paddingBottom: bottomInset,
             paddingTop: 6,

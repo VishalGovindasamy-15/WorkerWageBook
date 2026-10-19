@@ -8,7 +8,7 @@ import { settingsService } from '../../services/settingsService';
 import { useAppStore } from '../../stores/appStore';
 
 export function PinLockScreen({ navigation }: any) {
-  const { setUnlocked, setPinSetupRequired } = useAppStore();
+  const { setUnlocked, setPinSetupRequired, isDark, themeColors } = useAppStore();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [attempts, setAttempts] = useState(0);
@@ -79,17 +79,17 @@ export function PinLockScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
       <View style={styles.header}>
         <Image
           source={require('../../../assets/logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.appName}>Worker WageBook</Text>
+        <Text style={[styles.appName, isDark && { color: themeColors.text }]}>Worker WageBook</Text>
       </View>
 
-      <Text style={styles.instruction}>Enter PIN to unlock</Text>
+      <Text style={[styles.instruction, isDark && { color: themeColors.textSecondary }]}>Enter PIN to unlock</Text>
 
       <Animated.View style={[styles.dotsContainer, { transform: [{ translateX: shakeAnim }] }]}>
         {[0, 1, 2, 3].map((i) => (
@@ -97,6 +97,7 @@ export function PinLockScreen({ navigation }: any) {
             key={i}
             style={[
               styles.dot,
+              isDark && { backgroundColor: themeColors.cardBorder },
               pin.length > i && styles.dotFilled,
               error && pin.length > i && styles.dotError,
             ]}
@@ -114,30 +115,41 @@ export function PinLockScreen({ navigation }: any) {
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <TouchableOpacity
             key={num}
-            style={[styles.key, cooldown > 0 && styles.keyDisabled]}
+            style={[
+              styles.key,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 },
+              cooldown > 0 && styles.keyDisabled,
+            ]}
             onPress={() => handlePress(String(num))}
             activeOpacity={0.6}
             disabled={cooldown > 0}
           >
-            <Text style={styles.keyText}>{num}</Text>
+            <Text style={[styles.keyText, isDark && { color: themeColors.text }]}>{num}</Text>
           </TouchableOpacity>
         ))}
         <View style={styles.key} />
         <TouchableOpacity
-          style={[styles.key, cooldown > 0 && styles.keyDisabled]}
+          style={[
+            styles.key,
+            isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 },
+            cooldown > 0 && styles.keyDisabled,
+          ]}
           onPress={() => handlePress('0')}
           activeOpacity={0.6}
           disabled={cooldown > 0}
         >
-          <Text style={styles.keyText}>0</Text>
+          <Text style={[styles.keyText, isDark && { color: themeColors.text }]}>0</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.key}
+          style={[
+            styles.key,
+            isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 },
+          ]}
           onPress={handleBackspace}
           activeOpacity={0.6}
           disabled={cooldown > 0}
         >
-          <Ionicons name="backspace-outline" size={28} color={colors.neutral[600]} />
+          <Ionicons name="backspace-outline" size={28} color={isDark ? themeColors.textSecondary : colors.neutral[600]} />
         </TouchableOpacity>
       </View>
     </View>
@@ -145,7 +157,7 @@ export function PinLockScreen({ navigation }: any) {
 }
 
 export function SetupPinScreen({ navigation }: any) {
-  const { setUnlocked } = useAppStore();
+  const { setUnlocked, isDark, themeColors } = useAppStore();
   const [step, setStep] = useState<'business' | 'enter' | 'confirm'>('business');
   const [businessName, setBusinessName] = useState('');
   const [firstPin, setFirstPin] = useState('');
@@ -219,7 +231,7 @@ export function SetupPinScreen({ navigation }: any) {
 
   return (
     <ScrollView 
-      contentContainerStyle={styles.scrollContainer}
+      contentContainerStyle={[styles.scrollContainer, isDark && { backgroundColor: themeColors.background }]}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
@@ -228,22 +240,30 @@ export function SetupPinScreen({ navigation }: any) {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.appName}>Worker WageBook</Text>
+        <Text style={[styles.appName, isDark && { color: themeColors.text }]}>Worker WageBook</Text>
       </View>
 
       {step === 'business' ? (
         <View style={styles.businessContainer}>
-          <Text style={styles.setupTitle}>Set Up Your Business</Text>
-          <Text style={styles.setupSubtitle}>
+          <Text style={[styles.setupTitle, isDark && { color: themeColors.text }]}>Set Up Your Business</Text>
+          <Text style={[styles.setupSubtitle, isDark && { color: themeColors.textSecondary }]}>
             Enter your contractor or business name to appear on salary slips, attendance records, and reports.
           </Text>
 
           <View style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>Business / Contractor Name *</Text>
+            <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>Business / Contractor Name *</Text>
             <RNTextInput
-              style={[styles.businessInput, error ? styles.inputErrorBorder : null]}
+              style={[
+                styles.businessInput,
+                isDark && {
+                  backgroundColor: themeColors.inputBg,
+                  borderColor: themeColors.inputBorder,
+                  color: themeColors.text,
+                },
+                error ? styles.inputErrorBorder : null,
+              ]}
               placeholder="e.g. Royal Builders, SK Interiors..."
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={isDark ? themeColors.textMuted : colors.neutral[400]}
               value={businessName}
               onChangeText={(val) => {
                 setBusinessName(val);
@@ -268,19 +288,19 @@ export function SetupPinScreen({ navigation }: any) {
         <View style={styles.pinContainer}>
           {businessName.trim() ? (
             <TouchableOpacity 
-              style={styles.businessBadge}
+              style={[styles.businessBadge, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderColor: 'rgba(59, 130, 246, 0.3)' }]}
               onPress={() => {
                 setStep('business');
                 setError('');
               }}
             >
-              <Ionicons name="business-outline" size={14} color={colors.primary[600]} />
-              <Text style={styles.businessBadgeText}>{businessName}</Text>
-              <Ionicons name="pencil" size={12} color={colors.primary[500]} />
+              <Ionicons name="business-outline" size={14} color={isDark ? '#60A5FA' : colors.primary[600]} />
+              <Text style={[styles.businessBadgeText, isDark && { color: '#60A5FA' }]}>{businessName}</Text>
+              <Ionicons name="pencil" size={12} color={isDark ? '#60A5FA' : colors.primary[500]} />
             </TouchableOpacity>
           ) : null}
 
-          <Text style={styles.instruction}>
+          <Text style={[styles.instruction, isDark && { color: themeColors.textSecondary }]}>
             {step === 'enter' ? 'Create a 4-digit PIN' : 'Confirm your PIN'}
           </Text>
 
@@ -290,6 +310,7 @@ export function SetupPinScreen({ navigation }: any) {
                 key={i}
                 style={[
                   styles.dot,
+                  isDark && { backgroundColor: themeColors.cardBorder },
                   pin.length > i && styles.dotFilled,
                   error && pin.length > i && styles.dotError,
                 ]}
@@ -303,19 +324,36 @@ export function SetupPinScreen({ navigation }: any) {
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <TouchableOpacity
                 key={num}
-                style={styles.key}
+                style={[
+                  styles.key,
+                  isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 },
+                ]}
                 onPress={() => handlePress(String(num))}
                 activeOpacity={0.6}
               >
-                <Text style={styles.keyText}>{num}</Text>
+                <Text style={[styles.keyText, isDark && { color: themeColors.text }]}>{num}</Text>
               </TouchableOpacity>
             ))}
             <View style={styles.key} />
-            <TouchableOpacity style={styles.key} onPress={() => handlePress('0')} activeOpacity={0.6}>
-              <Text style={styles.keyText}>0</Text>
+            <TouchableOpacity
+              style={[
+                styles.key,
+                isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 },
+              ]}
+              onPress={() => handlePress('0')}
+              activeOpacity={0.6}
+            >
+              <Text style={[styles.keyText, isDark && { color: themeColors.text }]}>0</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.key} onPress={handleBackspace} activeOpacity={0.6}>
-              <Ionicons name="backspace-outline" size={28} color={colors.neutral[600]} />
+            <TouchableOpacity
+              style={[
+                styles.key,
+                isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 },
+              ]}
+              onPress={handleBackspace}
+              activeOpacity={0.6}
+            >
+              <Ionicons name="backspace-outline" size={28} color={isDark ? themeColors.textSecondary : colors.neutral[600]} />
             </TouchableOpacity>
           </View>
 
@@ -347,8 +385,8 @@ export function SetupPinScreen({ navigation }: any) {
               }}
               style={styles.backButton}
             >
-              <Ionicons name="arrow-back" size={16} color={colors.neutral[600]} />
-              <Text style={styles.backButtonText}>Re-enter PIN</Text>
+              <Ionicons name="arrow-back" size={16} color={isDark ? themeColors.textSecondary : colors.neutral[600]} />
+              <Text style={[styles.backButtonText, isDark && { color: themeColors.textSecondary }]}>Re-enter PIN</Text>
             </TouchableOpacity>
           )}
         </View>

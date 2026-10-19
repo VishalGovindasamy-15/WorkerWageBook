@@ -17,12 +17,14 @@ import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { colors, spacing, typography, shadows } from '../../constants/theme';
 import { Card, Badge, EmptyState } from '../../components/ui';
 import { auditService } from '../../services/auditService';
+import { useAppStore } from '../../stores/appStore';
 import { AuditLog } from '../../types';
 import { formatRelativeTime } from '../../utils/helpers';
 
 type ActionFilter = 'all' | 'attendance' | 'advance' | 'salary' | 'worker';
 
 export function ActivityLogsScreen() {
+  const { isDark, themeColors } = useAppStore();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,19 +94,19 @@ export function ActivityLogsScreen() {
   };
 
   const getActionColor = (action: string): string => {
-    if (action.includes('attendance')) return colors.success[600];
-    if (action.includes('advance')) return colors.primary[600];
-    if (action.includes('salary')) return colors.warning[600];
-    if (action.includes('worker')) return colors.info[600];
-    return colors.neutral[600];
+    if (action.includes('attendance')) return isDark ? '#4ADE80' : colors.success[600];
+    if (action.includes('advance')) return isDark ? '#60A5FA' : colors.primary[600];
+    if (action.includes('salary')) return isDark ? '#FBBF24' : colors.warning[600];
+    if (action.includes('worker')) return isDark ? '#38BDF8' : colors.info[600];
+    return isDark ? themeColors.textSecondary : colors.neutral[600];
   };
 
   const getActionBg = (action: string): string => {
-    if (action.includes('attendance')) return colors.success[50];
-    if (action.includes('advance')) return colors.primary[50];
-    if (action.includes('salary')) return colors.warning[50];
-    if (action.includes('worker')) return colors.info[50];
-    return colors.neutral[100];
+    if (action.includes('attendance')) return isDark ? 'rgba(74, 222, 128, 0.15)' : colors.success[50];
+    if (action.includes('advance')) return isDark ? 'rgba(59, 130, 246, 0.15)' : colors.primary[50];
+    if (action.includes('salary')) return isDark ? 'rgba(251, 191, 36, 0.15)' : colors.warning[50];
+    if (action.includes('worker')) return isDark ? 'rgba(56, 189, 248, 0.15)' : colors.info[50];
+    return isDark ? themeColors.surface : colors.neutral[100];
   };
 
   const getActionTitle = (log: AuditLog): string => {
@@ -118,6 +120,7 @@ export function ActivityLogsScreen() {
       worker_edited: 'Worker Updated',
       worker_deactivated: 'Worker Deactivated',
       worker_reactivated: 'Worker Reactivated',
+      worker_deleted: 'Worker Deleted',
       category_created: 'Category Created',
       category_renamed: 'Category Renamed',
       category_deactivated: 'Category Removed',
@@ -140,7 +143,6 @@ export function ActivityLogsScreen() {
     } catch {
       dateGroup = 'Recent';
     }
-
     if (!groups[dateGroup]) {
       groups[dateGroup] = [];
     }
@@ -169,21 +171,21 @@ export function ActivityLogsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
       {/* Search Bar */}
-      <View style={styles.searchBarContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.neutral[400]} />
+      <View style={[styles.searchBarContainer, isDark && { backgroundColor: themeColors.surface }]}>
+        <View style={[styles.searchBar, isDark && { backgroundColor: themeColors.inputBg, borderColor: themeColors.border }]}>
+          <Ionicons name="search" size={20} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
           <RNTextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, isDark && { color: themeColors.text }]}
             placeholder="Search logs by action or reason..."
-            placeholderTextColor={colors.neutral[400]}
+            placeholderTextColor={isDark ? themeColors.textMuted : colors.neutral[400]}
             value={search}
             onChangeText={setSearch}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={colors.neutral[400]} />
+              <Ionicons name="close-circle" size={18} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
             </TouchableOpacity>
           )}
         </View>
@@ -193,7 +195,7 @@ export function ActivityLogsScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.filterBar}
+        style={[styles.filterBar, isDark && { backgroundColor: themeColors.surface, borderBottomColor: themeColors.border }]}
         contentContainerStyle={styles.filterContent}
       >
         {[
@@ -207,14 +209,16 @@ export function ActivityLogsScreen() {
             key={f.key}
             style={[
               styles.filterChip,
-              activeFilter === f.key && styles.filterChipActive,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+              activeFilter === f.key && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
             ]}
             onPress={() => setActiveFilter(f.key as ActionFilter)}
           >
             <Text
               style={[
                 styles.filterChipText,
-                activeFilter === f.key && styles.filterChipTextActive,
+                isDark && { color: themeColors.textSecondary },
+                activeFilter === f.key && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
               ]}
             >
               {f.label}
@@ -237,30 +241,30 @@ export function ActivityLogsScreen() {
         ) : (
           Object.entries(groupedLogs).map(([groupTitle, groupItems]) => (
             <View key={groupTitle} style={styles.groupContainer}>
-              <Text style={styles.groupHeader}>{groupTitle.toUpperCase()}</Text>
+              <Text style={[styles.groupHeader, isDark && { color: themeColors.textSecondary }]}>{groupTitle.toUpperCase()}</Text>
               {groupItems.map((log) => {
                 const detail = renderDetails(log);
                 const color = getActionColor(log.action);
                 const bg = getActionBg(log.action);
 
                 return (
-                  <Card key={log.id} style={styles.logCard}>
+                  <Card key={log.id} style={[styles.logCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 }]}>
                     <View style={styles.logItem}>
                       <View style={[styles.iconContainer, { backgroundColor: bg }]}>
                         <Ionicons name={getActionIcon(log.action)} size={20} color={color} />
                       </View>
                       <View style={styles.logDetails}>
                         <View style={styles.logTopRow}>
-                          <Text style={styles.logTitle}>{getActionTitle(log)}</Text>
-                          <Text style={styles.logTime}>
+                          <Text style={[styles.logTitle, isDark && { color: themeColors.text }]}>{getActionTitle(log)}</Text>
+                          <Text style={[styles.logTime, isDark && { color: themeColors.textMuted }]}>
                             {formatRelativeTime(log.created_at)}
                           </Text>
                         </View>
-                        {detail && <Text style={styles.logMeta}>{detail}</Text>}
+                        {detail && <Text style={[styles.logMeta, isDark && { color: themeColors.textSecondary }]}>{detail}</Text>}
                         {log.reason && (
-                          <Text style={styles.logReason}>Reason: {log.reason}</Text>
+                          <Text style={[styles.logReason, isDark && { color: themeColors.textMuted }]}>Reason: {log.reason}</Text>
                         )}
-                        <Text style={styles.logOperator}>By: {log.performed_by}</Text>
+                        <Text style={[styles.logOperator, isDark && { color: themeColors.textMuted }]}>By: {log.performed_by}</Text>
                       </View>
                     </View>
                   </Card>

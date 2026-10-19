@@ -1,7 +1,7 @@
 // Worker WageBook - Worker Service
 
 import { Worker } from '../types';
-import { runAsync, getFirstAsync, getAllAsync } from '../database/database';
+import { runAsync, getFirstAsync, getAllAsync, withTransaction } from '../database/database';
 import { auditService } from './auditService';
 
 export const workerService = {
@@ -148,6 +148,54 @@ export const workerService = {
   // Reactivate a worker
   async reactivate(id: number): Promise<void> {
     await this.update(id, { is_active: 1 });
+  },
+
+  // Permanently delete a worker and all associated records
+  async delete(id: number): Promise<void> {
+    const worker = await this.getById(id);
+    await withTransaction(async (db) => {
+      // 1. Delete attendance edit history for this worker's attendance records
+      await db.runAsync(
+        `DELETE FROM attendance_history WHERE attendance_id IN (SELECT id FROM attendance WHERE worker_id = ?)`,
+        [id]
+      );
+
+      // 2. Delete attendance records
+      await db.runAsync(`DELETE FROM attendance WHERE worker_id = ?`, [id]);
+
+      // 3. Delete advance recoveries
+      await db.runAsync(`DELETE FROM advance_recoveries WHERE worker_id = ?`, [id]);
+
+      // 4. Delete advances
+      await db.runAsync(`DELETE FROM advances WHERE worker_id = ?`, [id]);
+
+      // 5. Delete wage change history
+      await db.runAsync(`DELETE FROM wage_change_history WHERE worker_id = ?`, [id]);
+
+      // 6. Delete settlement items & adjustments
+      await db.runAsync(
+        `DELETE FROM settlement_items WHERE settlement_id IN (SELECT id FROM salary_settlements WHERE worker_id = ?)`,
+        [id]
+      );
+      await db.runAsync(
+        `DELETE FROM settlement_adjustments WHERE settlement_id IN (SELECT id FROM salary_settlements WHERE worker_id = ?)`,
+        [id]
+      );
+
+      // 7. Delete salary settlements
+      await db.runAsync(`DELETE FROM salary_settlements WHERE worker_id = ?`, [id]);
+
+      // 8. Delete the worker record
+      await db.runAsync(`DELETE FROM workers WHERE id = ?`, [id]);
+    });
+
+    await auditService.log({
+      action: 'worker_deleted',
+      entity_type: 'worker',
+      entity_id: id,
+      worker_id: id,
+      reason: worker ? `Permanently deleted worker ${worker.name} (${worker.employee_id})` : undefined,
+    });
   },
 
   // Get worker by ID

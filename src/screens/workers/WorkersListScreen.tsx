@@ -9,9 +9,11 @@ import { Avatar, Badge, Card, TextInput, EmptyState, Button } from '../../compon
 import { formatCurrency } from '../../utils/helpers';
 import { workerService } from '../../services/workerService';
 import { categoryService } from '../../services/categoryService';
+import { useAppStore } from '../../stores/appStore';
 import { Worker, Category } from '../../types';
 
 export function WorkersListScreen({ navigation }: any) {
+  const { isDark, themeColors } = useAppStore();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,7 @@ export function WorkersListScreen({ navigation }: any) {
   // Completely empty state (no workers in DB at all)
   if (!loading && workers.length === 0 && !hasActiveFilters) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
         <EmptyState
           icon="people-outline"
           title="No workers yet"
@@ -95,11 +97,11 @@ export function WorkersListScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.neutral[400]} style={{ marginRight: 8 }} />
+      <View style={[styles.searchContainer, isDark && { backgroundColor: themeColors.surface }]}>
+        <View style={[styles.searchBar, isDark && { backgroundColor: themeColors.inputBg, borderWidth: 1, borderColor: themeColors.border }]}>
+          <Ionicons name="search" size={20} color={isDark ? themeColors.textMuted : colors.neutral[400]} style={{ marginRight: 8 }} />
           <TextInput
             placeholder="Search by name or ID..."
             value={search}
@@ -109,7 +111,7 @@ export function WorkersListScreen({ navigation }: any) {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={20} color={colors.neutral[400]} />
+              <Ionicons name="close-circle" size={20} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
             </TouchableOpacity>
           )}
         </View>
@@ -119,45 +121,77 @@ export function WorkersListScreen({ navigation }: any) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.filterContainer}
+        style={[styles.filterContainer, isDark && { backgroundColor: themeColors.surface, borderBottomColor: themeColors.border }]}
         contentContainerStyle={{ paddingHorizontal: spacing[4], alignItems: 'center' }}
       >
         {/* Status Filters */}
         <TouchableOpacity
-          style={[styles.filterChip, statusFilter === 'all' && styles.filterChipActive]}
+          style={[
+            styles.filterChip,
+            isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+            statusFilter === 'all' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+          ]}
           onPress={() => setStatusFilter('all')}
         >
-          <Text style={[styles.filterChipText, statusFilter === 'all' && styles.filterChipTextActive]}>
+          <Text style={[
+            styles.filterChipText,
+            isDark && { color: themeColors.textSecondary },
+            statusFilter === 'all' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+          ]}>
             All
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.filterChip, statusFilter === 'active' && styles.filterChipActive]}
+          style={[
+            styles.filterChip,
+            isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+            statusFilter === 'active' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+          ]}
           onPress={() => setStatusFilter('active')}
         >
-          <Text style={[styles.filterChipText, statusFilter === 'active' && styles.filterChipTextActive]}>
+          <Text style={[
+            styles.filterChipText,
+            isDark && { color: themeColors.textSecondary },
+            statusFilter === 'active' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+          ]}>
             Active
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.filterChip, statusFilter === 'inactive' && styles.filterChipActive]}
+          style={[
+            styles.filterChip,
+            isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+            statusFilter === 'inactive' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+          ]}
           onPress={() => setStatusFilter('inactive')}
         >
-          <Text style={[styles.filterChipText, statusFilter === 'inactive' && styles.filterChipTextActive]}>
+          <Text style={[
+            styles.filterChipText,
+            isDark && { color: themeColors.textSecondary },
+            statusFilter === 'inactive' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+          ]}>
             Inactive
           </Text>
         </TouchableOpacity>
 
         {categories.length > 0 && (
           <>
-            <View style={styles.filterDivider} />
+            <View style={[styles.filterDivider, isDark && { backgroundColor: themeColors.border }]} />
             <TouchableOpacity
-              style={[styles.filterChip, selectedCategory === null && styles.filterChipActive]}
+              style={[
+                styles.filterChip,
+                isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                selectedCategory === null && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+              ]}
               onPress={() => setSelectedCategory(null)}
             >
-              <Text style={[styles.filterChipText, selectedCategory === null && styles.filterChipTextActive]}>
+              <Text style={[
+                styles.filterChipText,
+                isDark && { color: themeColors.textSecondary },
+                selectedCategory === null && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+              ]}>
                 All Roles
               </Text>
             </TouchableOpacity>
@@ -167,10 +201,18 @@ export function WorkersListScreen({ navigation }: any) {
               return (
                 <TouchableOpacity
                   key={cat.id}
-                  style={[styles.filterChip, isSelected && styles.filterChipActive]}
+                  style={[
+                    styles.filterChip,
+                    isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                    isSelected && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+                  ]}
                   onPress={() => setSelectedCategory(isSelected ? null : cat.id)}
                 >
-                  <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                  <Text style={[
+                    styles.filterChipText,
+                    isDark && { color: themeColors.textSecondary },
+                    isSelected && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+                  ]}>
                     {cat.name}
                   </Text>
                 </TouchableOpacity>
@@ -182,7 +224,7 @@ export function WorkersListScreen({ navigation }: any) {
 
       {/* Results Count / Reset bar */}
       <View style={styles.resultsBar}>
-        <Text style={styles.resultsCount}>
+        <Text style={[styles.resultsCount, isDark && { color: themeColors.textMuted }]}>
           {workers.length} {workers.length === 1 ? 'worker' : 'workers'}
         </Text>
         {hasActiveFilters && (
@@ -205,34 +247,41 @@ export function WorkersListScreen({ navigation }: any) {
       >
         {workers.length === 0 ? (
           <View style={styles.noResultsContainer}>
-            <Ionicons name="search-outline" size={48} color={colors.neutral[300]} />
-            <Text style={styles.noResultsTitle}>No workers match your filter</Text>
-            <Text style={styles.noResultsSub}>Try changing the search query or category filter.</Text>
+            <Ionicons name="search-outline" size={48} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
+            <Text style={[styles.noResultsTitle, isDark && { color: themeColors.text }]}>No workers match your filter</Text>
+            <Text style={[styles.noResultsSub, isDark && { color: themeColors.textSecondary }]}>Try changing the search query or category filter.</Text>
             <TouchableOpacity
-              style={styles.resetButton}
+              style={[styles.resetButton, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.2)' }]}
               onPress={() => {
                 setSearch('');
                 setSelectedCategory(null);
                 setStatusFilter('all');
               }}
             >
-              <Text style={styles.resetButtonText}>Clear All Filters</Text>
+              <Text style={[styles.resetButtonText, isDark && { color: '#60A5FA' }]}>Clear All Filters</Text>
             </TouchableOpacity>
           </View>
         ) : (
           workers.map((worker) => (
             <TouchableOpacity
               key={worker.id}
-              style={styles.workerCard}
+              style={[
+                styles.workerCard,
+                isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 },
+              ]}
               onPress={() => navigation.navigate('WorkerProfile', { workerId: worker.id })}
               activeOpacity={0.7}
             >
               <Avatar name={worker.name} size="md" />
               <View style={styles.workerInfo}>
-                <Text style={[styles.workerName, !worker.is_active && styles.workerNameInactive]}>
+                <Text style={[
+                  styles.workerName,
+                  isDark && { color: themeColors.text },
+                  !worker.is_active && (isDark ? { color: themeColors.textMuted } : styles.workerNameInactive),
+                ]}>
                   {worker.name}
                 </Text>
-                <Text style={styles.workerId}>{worker.employee_id}</Text>
+                <Text style={[styles.workerId, isDark && { color: themeColors.textMuted }]}>{worker.employee_id}</Text>
                 <View style={styles.workerMeta}>
                   {worker.category_id && (
                     <Badge label={getCategoryName(worker.category_id)} variant="neutral" size="sm" />
@@ -244,12 +293,12 @@ export function WorkersListScreen({ navigation }: any) {
                   />
                 </View>
                 {worker.daily_wage > 0 && (
-                  <Text style={styles.workerWage}>
+                  <Text style={[styles.workerWage, isDark && { color: '#60A5FA' }]}>
                     {formatCurrency(worker.daily_wage)}/day
                   </Text>
                 )}
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.neutral[300]} />
+              <Ionicons name="chevron-forward" size={20} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
             </TouchableOpacity>
           ))
         )}

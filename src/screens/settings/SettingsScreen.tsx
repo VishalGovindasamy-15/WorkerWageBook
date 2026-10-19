@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   Image,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography, shadows, borderRadius } from '../../constants/theme';
@@ -49,8 +50,22 @@ const AUTO_BACKUP_OPTIONS = [
   { id: 'weekly', label: 'Weekly Backup' },
 ];
 
+const THEME_OPTIONS = [
+  { id: 'light', label: 'Light Theme', sub: 'Clean, bright interface', icon: 'sunny-outline' as const },
+  { id: 'dark', label: 'Dark Theme', sub: 'Easy on the eyes in low light', icon: 'moon-outline' as const },
+  { id: 'system', label: 'System Default', sub: 'Matches your device display settings', icon: 'phone-portrait-outline' as const },
+];
+
 export function SettingsScreen({ navigation }: any) {
-  const { setWeekStartsOn, setUnlocked, setPinSetupRequired } = useAppStore();
+  const {
+    setWeekStartsOn,
+    setUnlocked,
+    setPinSetupRequired,
+    themeMode,
+    isDark,
+    themeColors,
+    setThemeMode,
+  } = useAppStore();
   const [businessName, setBusinessName] = useState('My Business');
   const [weekStartDay, setWeekStartDay] = useState('monday');
   const [autoBackup, setAutoBackup] = useState('weekly');
@@ -61,6 +76,8 @@ export function SettingsScreen({ navigation }: any) {
   // Modals for selection
   const [weekModalVisible, setWeekModalVisible] = useState(false);
   const [backupModalVisible, setBackupModalVisible] = useState(false);
+  const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [factoryResetModalVisible, setFactoryResetModalVisible] = useState(false);
   const [resetPin, setResetPin] = useState('');
   const [resetPinError, setResetPinError] = useState('');
@@ -89,6 +106,11 @@ export function SettingsScreen({ navigation }: any) {
     setAutoBackup(schedId);
     await settingsService.setAutoBackupSchedule(schedId);
     setBackupModalVisible(false);
+  };
+
+  const handleSelectTheme = async (mode: 'light' | 'dark' | 'system') => {
+    await setThemeMode(mode);
+    setThemeModalVisible(false);
   };
 
   const handleLogout = () => {
@@ -333,6 +355,17 @@ export function SettingsScreen({ navigation }: any) {
       ],
     },
     {
+      title: 'APPEARANCE & THEME',
+      items: [
+        {
+          label: 'App Theme',
+          value: themeMode === 'light' ? 'Light Theme' : themeMode === 'dark' ? 'Dark Theme' : 'System Default',
+          icon: (isDark ? 'moon' : 'sunny-outline') as keyof typeof Ionicons.glyphMap,
+          onPress: () => setThemeModalVisible(true),
+        },
+      ],
+    },
+    {
       title: 'BACKUP & RESTORE',
       items: [
         {
@@ -365,6 +398,31 @@ export function SettingsScreen({ navigation }: any) {
       ],
     },
     {
+      title: 'ABOUT',
+      items: [
+        {
+          label: 'Version',
+          value: '1.0.0 (Build 1)',
+          icon: 'information-circle-outline',
+          onPress: () => setAboutModalVisible(true),
+        },
+        {
+          label: 'Developer',
+          value: 'Vishal G',
+          icon: 'person-outline',
+          onPress: () => setAboutModalVisible(true),
+        },
+        {
+          label: 'Developer Contact',
+          value: 'vishalgovindasamy@gmail.com',
+          icon: 'mail-outline',
+          onPress: () => {
+            Linking.openURL('mailto:vishalgovindasamy@gmail.com?subject=Worker%20WageBook%20Support');
+          },
+        },
+      ],
+    },
+    {
       title: 'DANGER ZONE',
       items: [
         {
@@ -376,38 +434,30 @@ export function SettingsScreen({ navigation }: any) {
         },
       ],
     },
-    {
-      title: 'ABOUT',
-      items: [
-        {
-          label: 'Version',
-          value: '1.0.0 (Build 1)',
-          icon: 'information-circle-outline',
-          onPress: () => {},
-        },
-      ],
-    },
   ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: spacing[8] }}>
+    <ScrollView
+      style={[styles.container, isDark && { backgroundColor: themeColors.background }]}
+      contentContainerStyle={{ paddingBottom: spacing[8] }}
+    >
       <View style={styles.content}>
         {/* App Branding Header */}
-        <View style={styles.brandingCard}>
+        <View style={[styles.brandingCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border }]}>
           <Image
             source={require('../../../assets/icon.png')}
             style={styles.appIcon}
             resizeMode="contain"
           />
           <View style={{ flex: 1, marginLeft: spacing[3] }}>
-            <Text style={styles.appName}>Worker WageBook</Text>
-            <Text style={styles.appSub}>{businessName}</Text>
+            <Text style={[styles.appName, isDark && { color: themeColors.text }]}>Worker WageBook</Text>
+            <Text style={[styles.appSub, isDark && { color: themeColors.textSecondary }]}>{businessName}</Text>
           </View>
         </View>
 
         {settingGroups.map((group, groupIdx) => (
           <View key={groupIdx} style={styles.groupContainer}>
-            <Text style={styles.groupTitle}>{group.title}</Text>
+            <Text style={[styles.groupTitle, isDark && { color: themeColors.textSecondary }]}>{group.title}</Text>
             <Card style={styles.groupCard}>
               {group.items.map((item, itemIdx) => (
                 <View key={itemIdx}>
@@ -420,35 +470,40 @@ export function SettingsScreen({ navigation }: any) {
                       style={[
                         styles.iconContainer,
                         item.danger && { backgroundColor: colors.danger[50] },
+                        isDark && !item.danger && { backgroundColor: 'rgba(59, 130, 246, 0.15)' },
                       ]}
                     >
                       <Ionicons
                         name={item.icon}
                         size={20}
-                        color={item.danger ? colors.danger[600] : colors.primary[600]}
+                        color={item.danger ? colors.danger[600] : colors.primary[500]}
                       />
                     </View>
                     <View style={styles.itemTextContainer}>
                       <Text
                         style={[
                           styles.itemLabel,
-                          item.danger && { color: colors.danger[600] },
+                          item.danger
+                            ? { color: colors.danger[600] }
+                            : (isDark ? { color: themeColors.text } : null),
                         ]}
                       >
                         {item.label}
                       </Text>
                       {item.value && (
-                        <Text style={styles.itemValue}>{item.value}</Text>
+                        <Text style={[styles.itemValue, isDark && { color: themeColors.textSecondary }]}>
+                          {item.value}
+                        </Text>
                       )}
                     </View>
                     <Ionicons
                       name="chevron-forward"
                       size={20}
-                      color={colors.neutral[400]}
+                      color={isDark ? themeColors.textMuted : colors.neutral[400]}
                     />
                   </TouchableOpacity>
                   {itemIdx < group.items.length - 1 && (
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, isDark && { backgroundColor: themeColors.divider }]} />
                   )}
                 </View>
               ))}
@@ -470,14 +525,14 @@ export function SettingsScreen({ navigation }: any) {
             activeOpacity={1}
             onPress={() => setWeekModalVisible(false)}
           />
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: themeColors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Work Week Cycle</Text>
+              <Text style={[styles.modalTitle, isDark && { color: themeColors.text }]}>Select Work Week Cycle</Text>
               <TouchableOpacity onPress={() => setWeekModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.neutral[500]} />
+                <Ionicons name="close" size={24} color={isDark ? themeColors.textSecondary : colors.neutral[500]} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalDesc}>
+            <Text style={[styles.modalDesc, isDark && { color: themeColors.textSecondary }]}>
               Choose the start and end days for your weekly payroll and attendance cycle:
             </Text>
 
@@ -487,14 +542,19 @@ export function SettingsScreen({ navigation }: any) {
                 return (
                   <TouchableOpacity
                     key={cycle.id}
-                    style={[styles.modalOption, isSelected && styles.modalOptionSelected]}
+                    style={[
+                      styles.modalOption,
+                      isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+                      isSelected && styles.modalOptionSelected,
+                      isSelected && isDark && { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] },
+                    ]}
                     onPress={() => handleSelectWeekCycle(cycle)}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.modalOptionTitle, isSelected && styles.modalOptionTitleSelected]}>
+                      <Text style={[styles.modalOptionTitle, isDark && { color: themeColors.text }, isSelected && styles.modalOptionTitleSelected]}>
                         {cycle.label}
                       </Text>
-                      <Text style={styles.modalOptionSub}>
+                      <Text style={[styles.modalOptionSub, isDark && { color: themeColors.textSecondary }]}>
                         Starts on {cycle.start} · Closes on {cycle.end}
                       </Text>
                     </View>
@@ -522,14 +582,14 @@ export function SettingsScreen({ navigation }: any) {
             activeOpacity={1}
             onPress={() => setBackupModalVisible(false)}
           />
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: themeColors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Auto-Backup Schedule</Text>
+              <Text style={[styles.modalTitle, isDark && { color: themeColors.text }]}>Auto-Backup Schedule</Text>
               <TouchableOpacity onPress={() => setBackupModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.neutral[500]} />
+                <Ionicons name="close" size={24} color={isDark ? themeColors.textSecondary : colors.neutral[500]} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalDesc}>
+            <Text style={[styles.modalDesc, isDark && { color: themeColors.textSecondary }]}>
               How often should Worker WageBook remind or perform backup snapshots:
             </Text>
 
@@ -538,10 +598,15 @@ export function SettingsScreen({ navigation }: any) {
               return (
                 <TouchableOpacity
                   key={opt.id}
-                  style={[styles.modalOption, isSelected && styles.modalOptionSelected]}
+                  style={[
+                    styles.modalOption,
+                    isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+                    isSelected && styles.modalOptionSelected,
+                    isSelected && isDark && { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] },
+                  ]}
                   onPress={() => handleSelectAutoBackup(opt.id)}
                 >
-                  <Text style={[styles.modalOptionTitle, isSelected && styles.modalOptionTitleSelected]}>
+                  <Text style={[styles.modalOptionTitle, isDark && { color: themeColors.text }, isSelected && styles.modalOptionTitleSelected]}>
                     {opt.label}
                   </Text>
                   {isSelected && (
@@ -550,6 +615,152 @@ export function SettingsScreen({ navigation }: any) {
                 </TouchableOpacity>
               );
             })}
+          </View>
+        </View>
+      </Modal>
+
+      {/* App Theme Selection Modal */}
+      <Modal
+        visible={themeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setThemeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setThemeModalVisible(false)}
+          />
+          <View style={[styles.modalContent, isDark && { backgroundColor: themeColors.card }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="color-palette-outline" size={22} color={colors.primary[500]} />
+                <Text style={[styles.modalTitle, isDark && { color: themeColors.text }]}>Choose App Theme</Text>
+              </View>
+              <TouchableOpacity onPress={() => setThemeModalVisible(false)}>
+                <Ionicons name="close" size={24} color={isDark ? themeColors.textSecondary : colors.neutral[500]} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.modalDesc, isDark && { color: themeColors.textSecondary }]}>
+              Customize the visual appearance of Worker WageBook:
+            </Text>
+
+            {THEME_OPTIONS.map((opt) => {
+              const isSelected = opt.id === themeMode;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[
+                    styles.modalOption,
+                    isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+                    isSelected && styles.modalOptionSelected,
+                    isSelected && isDark && { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] },
+                  ]}
+                  onPress={() => handleSelectTheme(opt.id as any)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
+                    <Ionicons
+                      name={opt.icon}
+                      size={22}
+                      color={isSelected ? colors.primary[500] : (isDark ? themeColors.textSecondary : colors.neutral[600])}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[
+                        styles.modalOptionTitle,
+                        isDark && { color: themeColors.text },
+                        isSelected && styles.modalOptionTitleSelected,
+                      ]}>
+                        {opt.label}
+                      </Text>
+                      <Text style={[styles.modalOptionSub, isDark && { color: themeColors.textSecondary }]}>
+                        {opt.sub}
+                      </Text>
+                    </View>
+                  </View>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={22} color={colors.primary[600]} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
+
+      {/* About Developer Modal */}
+      <Modal
+        visible={aboutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAboutModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setAboutModalVisible(false)}
+          />
+          <View style={[styles.modalContent, { maxWidth: 380 }, isDark && { backgroundColor: themeColors.card }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="information-circle" size={24} color={colors.primary[600]} />
+                <Text style={[styles.modalTitle, isDark && { color: themeColors.text }]}>About Developer</Text>
+              </View>
+              <TouchableOpacity onPress={() => setAboutModalVisible(false)}>
+                <Ionicons name="close" size={24} color={isDark ? themeColors.textSecondary : colors.neutral[500]} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ alignItems: 'center', marginVertical: spacing[3] }}>
+              <Image
+                source={require('../../../assets/icon.png')}
+                style={{ width: 64, height: 64, borderRadius: 16, marginBottom: spacing[2] }}
+                resizeMode="contain"
+              />
+              <Text style={{ ...typography.h2, color: isDark ? themeColors.text : colors.neutral[900], fontWeight: '700' }}>
+                Worker WageBook
+              </Text>
+              <Text style={{ ...typography.caption, color: isDark ? themeColors.textSecondary : colors.neutral[500], marginTop: 2 }}>
+                Version 1.0.0 (Build 1)
+              </Text>
+            </View>
+
+            <View style={{
+              backgroundColor: isDark ? themeColors.surface : colors.neutral[50],
+              borderRadius: borderRadius.md,
+              padding: spacing[3],
+              marginBottom: spacing[3],
+              borderWidth: 1,
+              borderColor: isDark ? themeColors.border : colors.neutral[200],
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                <Ionicons name="person" size={18} color={colors.primary[600]} />
+                <Text style={{ ...typography.caption, color: isDark ? themeColors.textSecondary : colors.neutral[500] }}>Developed by:</Text>
+                <Text style={{ ...typography.body, fontWeight: '700', color: isDark ? themeColors.text : colors.neutral[900] }}>Vishal G</Text>
+              </View>
+              <TouchableOpacity 
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                onPress={() => Linking.openURL('mailto:vishalgovindasamy@gmail.com?subject=Worker%20WageBook%20Inquiry')}
+              >
+                <Ionicons name="mail" size={18} color={colors.primary[600]} />
+                <Text style={{ ...typography.caption, color: isDark ? themeColors.textSecondary : colors.neutral[500] }}>Email:</Text>
+                <Text style={{ ...typography.bodySmall, color: colors.primary[600], fontWeight: '600', textDecorationLine: 'underline' }}>
+                  vishalgovindasamy@gmail.com
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ ...typography.caption, color: isDark ? themeColors.textSecondary : colors.neutral[600], textAlign: 'center', marginBottom: spacing[4], lineHeight: 18 }}>
+              Built for contractors, builders, and small businesses to manage attendance, advances, and weekly salary calculations 100% offline with zero cloud lock-in.
+            </Text>
+
+            <Button
+              title="Close"
+              variant="primary"
+              fullWidth
+              onPress={() => setAboutModalVisible(false)}
+            />
           </View>
         </View>
       </Modal>
@@ -567,18 +778,18 @@ export function SettingsScreen({ navigation }: any) {
             activeOpacity={1}
             onPress={() => setFactoryResetModalVisible(false)}
           />
-          <View style={[styles.modalContent, { maxWidth: 360 }]}>
+          <View style={[styles.modalContent, { maxWidth: 360 }, isDark && { backgroundColor: themeColors.card }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="warning" size={24} color={colors.danger[500]} />
                 <Text style={[styles.modalTitle, { color: colors.danger[600] }]}>Factory Reset</Text>
               </View>
               <TouchableOpacity onPress={() => setFactoryResetModalVisible(false)}>
-                <Ionicons name="close" size={24} color={colors.neutral[500]} />
+                <Ionicons name="close" size={24} color={isDark ? themeColors.textSecondary : colors.neutral[500]} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalDesc}>
+            <Text style={[styles.modalDesc, isDark && { color: themeColors.textSecondary }]}>
               This will permanently delete all workers, attendance logs, advances, salary history, and settings. Enter your 4-digit App PIN to confirm.
             </Text>
 

@@ -30,7 +30,7 @@ import { AuditLog } from '../../types';
 export function HomeScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const topPadding = Platform.OS === 'web' ? spacing[3] : Math.max(insets.top, 20);
-  const { currentWeekDate, currentWeek, weekStartsOn, goToNextWeek, goToPreviousWeek } = useAppStore();
+  const { currentWeekDate, currentWeek, weekStartsOn, goToNextWeek, goToPreviousWeek, isDark, themeColors } = useAppStore();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     totalWorkers: 0,
@@ -148,22 +148,23 @@ export function HomeScreen({ navigation }: any) {
       worker_edited: 'Worker Updated',
       worker_deactivated: 'Worker Deactivated',
       worker_reactivated: 'Worker Reactivated',
+      worker_deleted: 'Worker Deleted',
       category_created: 'Category Created',
     };
     return labels[log.action] || log.action.replace(/_/g, ' ');
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {/* App Bar */}
-      <View style={[styles.appBar, { paddingTop: topPadding }]}>
+      <View style={[styles.appBar, { paddingTop: topPadding, backgroundColor: themeColors.headerBg, borderBottomColor: themeColors.border }]}>
         <View style={styles.appBarLeft}>
           <Image
             source={require('../../../assets/logo.png')}
             style={styles.appBarLogo}
             resizeMode="contain"
           />
-          <Text style={styles.appBarTitle}>Worker WageBook</Text>
+          <Text style={[styles.appBarTitle, { color: themeColors.text }]}>Worker WageBook</Text>
         </View>
         <View style={styles.appBarRight}>
           <TouchableOpacity
@@ -171,14 +172,14 @@ export function HomeScreen({ navigation }: any) {
             style={styles.appBarButton}
             accessibilityLabel="Activity Logs"
           >
-            <Ionicons name="notifications-outline" size={22} color={colors.neutral[700]} />
+            <Ionicons name="notifications-outline" size={22} color={isDark ? themeColors.text : colors.neutral[700]} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation.navigate('Settings')}
             style={styles.appBarButton}
             accessibilityLabel="Settings"
           >
-            <Ionicons name="settings-outline" size={22} color={colors.neutral[700]} />
+            <Ionicons name="settings-outline" size={22} color={isDark ? themeColors.text : colors.neutral[700]} />
           </TouchableOpacity>
         </View>
       </View>
@@ -191,22 +192,22 @@ export function HomeScreen({ navigation }: any) {
         <Card style={styles.weekCard} padding={spacing[3]}>
           <TouchableOpacity
             onPress={goToPreviousWeek}
-            style={styles.weekArrow}
+            style={[styles.weekArrow, isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border, borderWidth: 1 }]}
             activeOpacity={0.7}
             accessibilityLabel="Previous week"
           >
-            <Ionicons name="chevron-back" size={22} color={colors.primary[600]} />
+            <Ionicons name="chevron-back" size={22} color={colors.primary[500]} />
           </TouchableOpacity>
           <View style={styles.weekCenter}>
-            <Text style={styles.weekLabel}>{weekLabel}</Text>
+            <Text style={[styles.weekLabel, { color: themeColors.text }]}>{weekLabel}</Text>
           </View>
           <TouchableOpacity
             onPress={goToNextWeek}
-            style={styles.weekArrow}
+            style={[styles.weekArrow, isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border, borderWidth: 1 }]}
             activeOpacity={0.7}
             accessibilityLabel="Next week"
           >
-            <Ionicons name="chevron-forward" size={22} color={colors.primary[600]} />
+            <Ionicons name="chevron-forward" size={22} color={colors.primary[500]} />
           </TouchableOpacity>
         </Card>
 
@@ -245,48 +246,57 @@ export function HomeScreen({ navigation }: any) {
         <SectionHeader title="QUICK ACTIONS" />
         <View style={styles.quickActions}>
           <TouchableOpacity
-            style={styles.quickActionCard}
+            style={[
+              styles.quickActionCard,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+            ]}
             onPress={() => navigation.navigate('AttendanceTab')}
             activeOpacity={0.7}
           >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.success[50] }]}>
-              <Ionicons name="calendar" size={24} color={colors.success[600]} />
+            <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : colors.success[50] }]}>
+              <Ionicons name="calendar" size={24} color={isDark ? '#4ADE80' : colors.success[600]} />
             </View>
             <View style={styles.quickActionContent}>
-              <Text style={styles.quickActionText}>Mark Attendance</Text>
-              <Text style={styles.quickActionSubtext}>Daily check-in for team</Text>
+              <Text style={[styles.quickActionText, isDark && { color: themeColors.text }]}>Mark Attendance</Text>
+              <Text style={[styles.quickActionSubtext, isDark && { color: themeColors.textSecondary }]}>Daily check-in for team</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.neutral[300]} />
+            <Ionicons name="chevron-forward" size={20} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.quickActionCard}
+            style={[
+              styles.quickActionCard,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+            ]}
             onPress={() => navigation.navigate('SalaryTab', { screen: 'RecordAdvance' })}
             activeOpacity={0.7}
           >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.primary[50] }]}>
-              <Ionicons name="cash" size={24} color={colors.primary[600]} />
+            <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : colors.primary[50] }]}>
+              <Ionicons name="cash" size={24} color={isDark ? '#60A5FA' : colors.primary[600]} />
             </View>
             <View style={styles.quickActionContent}>
-              <Text style={styles.quickActionText}>Record Advance</Text>
-              <Text style={styles.quickActionSubtext}>Issue cash, UPI or bank advance</Text>
+              <Text style={[styles.quickActionText, isDark && { color: themeColors.text }]}>Record Advance</Text>
+              <Text style={[styles.quickActionSubtext, isDark && { color: themeColors.textSecondary }]}>Issue cash, UPI or bank advance</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.neutral[300]} />
+            <Ionicons name="chevron-forward" size={20} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.quickActionCard}
+            style={[
+              styles.quickActionCard,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+            ]}
             onPress={() => navigation.navigate('SalaryTab', { screen: 'WeeklySalary' })}
             activeOpacity={0.7}
           >
-            <View style={[styles.quickActionIcon, { backgroundColor: colors.warning[50] }]}>
-              <Ionicons name="wallet" size={24} color={colors.warning[600]} />
+            <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(234, 179, 8, 0.2)' : colors.warning[50] }]}>
+              <Ionicons name="wallet" size={24} color={isDark ? '#FBBF24' : colors.warning[600]} />
             </View>
             <View style={styles.quickActionContent}>
-              <Text style={styles.quickActionText}>Settle Weekly Salary</Text>
-              <Text style={styles.quickActionSubtext}>Calculate & confirm payroll</Text>
+              <Text style={[styles.quickActionText, isDark && { color: themeColors.text }]}>Settle Weekly Salary</Text>
+              <Text style={[styles.quickActionSubtext, isDark && { color: themeColors.textSecondary }]}>Calculate & confirm payroll</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.neutral[300]} />
+            <Ionicons name="chevron-forward" size={20} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
           </TouchableOpacity>
         </View>
 
@@ -295,29 +305,29 @@ export function HomeScreen({ navigation }: any) {
         <Card style={styles.todayCard}>
           <View style={styles.todayGrid}>
             <View style={styles.todayItem}>
-              <Text style={styles.todayLabel}>Present</Text>
-              <Text style={[styles.todayValue, { color: colors.success[600] }]}>
+              <Text style={[styles.todayLabel, isDark && { color: themeColors.textSecondary }]}>Present</Text>
+              <Text style={[styles.todayValue, { color: isDark ? '#4ADE80' : colors.success[600] }]}>
                 {todayStats.present}
               </Text>
             </View>
-            <View style={styles.todayDivider} />
+            <View style={[styles.todayDivider, isDark && { backgroundColor: themeColors.divider }]} />
             <View style={styles.todayItem}>
-              <Text style={styles.todayLabel}>Half-day</Text>
-              <Text style={[styles.todayValue, { color: colors.warning[600] }]}>
+              <Text style={[styles.todayLabel, isDark && { color: themeColors.textSecondary }]}>Half-day</Text>
+              <Text style={[styles.todayValue, { color: isDark ? '#FBBF24' : colors.warning[600] }]}>
                 {todayStats.half_day}
               </Text>
             </View>
-            <View style={styles.todayDivider} />
+            <View style={[styles.todayDivider, isDark && { backgroundColor: themeColors.divider }]} />
             <View style={styles.todayItem}>
-              <Text style={styles.todayLabel}>Absent</Text>
-              <Text style={[styles.todayValue, { color: colors.danger[600] }]}>
+              <Text style={[styles.todayLabel, isDark && { color: themeColors.textSecondary }]}>Absent</Text>
+              <Text style={[styles.todayValue, { color: isDark ? '#F87171' : colors.danger[600] }]}>
                 {todayStats.absent}
               </Text>
             </View>
-            <View style={styles.todayDivider} />
+            <View style={[styles.todayDivider, isDark && { backgroundColor: themeColors.divider }]} />
             <View style={styles.todayItem}>
-              <Text style={styles.todayLabel}>Leave</Text>
-              <Text style={[styles.todayValue, { color: colors.neutral[600] }]}>
+              <Text style={[styles.todayLabel, isDark && { color: themeColors.textSecondary }]}>Leave</Text>
+              <Text style={[styles.todayValue, { color: isDark ? themeColors.textMuted : colors.neutral[600] }]}>
                 {todayStats.leave}
               </Text>
             </View>
@@ -332,7 +342,7 @@ export function HomeScreen({ navigation }: any) {
         />
         <Card style={styles.activityCard}>
           {recentActivity.length === 0 ? (
-            <Text style={styles.noActivity}>No activity recorded yet</Text>
+            <Text style={[styles.noActivity, isDark && { color: themeColors.textMuted }]}>No activity recorded yet</Text>
           ) : (
             recentActivity.map((log, index) => (
               <View key={log.id}>
@@ -340,7 +350,7 @@ export function HomeScreen({ navigation }: any) {
                   <View
                     style={[
                       styles.activityIcon,
-                      { backgroundColor: getActionColor(log.action) + '15' },
+                      { backgroundColor: getActionColor(log.action) + (isDark ? '35' : '15') },
                     ]}
                   >
                     <Ionicons
@@ -350,14 +360,14 @@ export function HomeScreen({ navigation }: any) {
                     />
                   </View>
                   <View style={styles.activityContent}>
-                    <Text style={styles.activityTitle}>{getActionLabel(log)}</Text>
-                    <Text style={styles.activityTime}>
+                    <Text style={[styles.activityTitle, isDark && { color: themeColors.text }]}>{getActionLabel(log)}</Text>
+                    <Text style={[styles.activityTime, isDark && { color: themeColors.textMuted }]}>
                       {formatRelativeTime(log.created_at)}
                     </Text>
                   </View>
                 </View>
                 {index < recentActivity.length - 1 && (
-                  <View style={styles.activityDivider} />
+                  <View style={[styles.activityDivider, isDark && { backgroundColor: themeColors.divider }]} />
                 )}
               </View>
             ))

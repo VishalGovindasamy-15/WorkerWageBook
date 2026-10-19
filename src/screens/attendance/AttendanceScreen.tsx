@@ -32,7 +32,7 @@ interface WorkerAttendance {
 }
 
 export function AttendanceScreen({ navigation }: any) {
-  const { showToast } = useAppStore();
+  const { showToast, isDark, themeColors } = useAppStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workers, setWorkers] = useState<WorkerAttendance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -233,11 +233,11 @@ export function AttendanceScreen({ navigation }: any) {
   const unmarkedCount = workers.filter((w) => !w.status).length;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
       {/* Search Bar */}
-      <View style={styles.searchBarContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={18} color={colors.neutral[400]} style={{ marginRight: 8 }} />
+      <View style={[styles.searchBarContainer, isDark && { backgroundColor: themeColors.surface }]}>
+        <View style={[styles.searchBar, isDark && { backgroundColor: themeColors.inputBg, borderWidth: 1, borderColor: themeColors.border }]}>
+          <Ionicons name="search" size={18} color={isDark ? themeColors.textMuted : colors.neutral[400]} style={{ marginRight: 8 }} />
           <TextInput
             placeholder="Search workers by name or ID..."
             value={searchQuery}
@@ -247,20 +247,20 @@ export function AttendanceScreen({ navigation }: any) {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={colors.neutral[400]} />
+              <Ionicons name="close-circle" size={18} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {/* Date Selector */}
-      <Card style={styles.dateSelector}>
+      <Card style={[styles.dateSelector, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
         <TouchableOpacity onPress={() => changeDate(-1)} style={styles.dateArrow}>
-          <Ionicons name="chevron-back" size={24} color={colors.primary[600]} />
+          <Ionicons name="chevron-back" size={24} color={colors.primary[500]} />
         </TouchableOpacity>
         <View style={styles.dateContent}>
-          <Text style={styles.dateText}>{format(selectedDate, 'EEE, MMM d, yyyy')}</Text>
-          <Text style={styles.dateSubtext}>
+          <Text style={[styles.dateText, isDark && { color: themeColors.text }]}>{format(selectedDate, 'EEE, MMM d, yyyy')}</Text>
+          <Text style={[styles.dateSubtext, isDark && { color: '#60A5FA' }]}>
             {format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
               ? 'Today'
               : format(selectedDate, 'yyyy-MM-dd') ===
@@ -270,7 +270,7 @@ export function AttendanceScreen({ navigation }: any) {
           </Text>
         </View>
         <TouchableOpacity onPress={() => changeDate(1)} style={styles.dateArrow}>
-          <Ionicons name="chevron-forward" size={24} color={colors.primary[600]} />
+          <Ionicons name="chevron-forward" size={24} color={colors.primary[500]} />
         </TouchableOpacity>
       </Card>
 
@@ -278,16 +278,24 @@ export function AttendanceScreen({ navigation }: any) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.filterContainer}
+        style={[styles.filterContainer, isDark && { backgroundColor: themeColors.surface, borderBottomColor: themeColors.border }]}
         contentContainerStyle={{ paddingHorizontal: spacing[4] }}
       >
         {(['all', 'active', 'unmarked'] as const).map((f) => (
           <TouchableOpacity
             key={f}
-            style={[styles.filterChip, filter === f && styles.filterChipActive]}
+            style={[
+              styles.filterChip,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border, borderWidth: 1 },
+              filter === f && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+            ]}
             onPress={() => setFilter(f)}
           >
-            <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
+            <Text style={[
+              styles.filterChipText,
+              isDark && { color: themeColors.textSecondary },
+              filter === f && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+            ]}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </Text>
           </TouchableOpacity>
@@ -295,33 +303,33 @@ export function AttendanceScreen({ navigation }: any) {
       </ScrollView>
 
       {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <Text style={styles.quickActionsLabel}>Mark all as:</Text>
+      <View style={[styles.quickActions, isDark && { backgroundColor: themeColors.surface, borderBottomColor: themeColors.border }]}>
+        <Text style={[styles.quickActionsLabel, isDark && { color: themeColors.textSecondary }]}>Mark all as:</Text>
         <View style={styles.quickActionButtons}>
           <TouchableOpacity
-            style={[styles.quickActionButton, { backgroundColor: colors.success[50] }]}
+            style={[styles.quickActionButton, { backgroundColor: isDark ? 'rgba(74, 222, 128, 0.15)' : colors.success[50] }]}
             onPress={() => markAllAs('present')}
           >
-            <Text style={[styles.quickActionText, { color: colors.success[700] }]}>Present</Text>
+            <Text style={[styles.quickActionText, { color: isDark ? '#4ADE80' : colors.success[700] }]}>Present</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.quickActionButton, { backgroundColor: colors.danger[50] }]}
+            style={[styles.quickActionButton, { backgroundColor: isDark ? 'rgba(248, 113, 113, 0.15)' : colors.danger[50] }]}
             onPress={() => markAllAs('absent')}
           >
-            <Text style={[styles.quickActionText, { color: colors.danger[700] }]}>Absent</Text>
+            <Text style={[styles.quickActionText, { color: isDark ? '#F87171' : colors.danger[700] }]}>Absent</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.quickActionButton, { backgroundColor: colors.info[50] }]}
+            style={[styles.quickActionButton, { backgroundColor: isDark ? 'rgba(96, 165, 250, 0.15)' : colors.info[50] }]}
             onPress={() => markAllAs('holiday')}
           >
-            <Text style={[styles.quickActionText, { color: colors.info[700] }]}>Holiday</Text>
+            <Text style={[styles.quickActionText, { color: isDark ? '#60A5FA' : colors.info[700] }]}>Holiday</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Stats Bar */}
-      <View style={styles.statsBar}>
-        <Text style={styles.statsText}>
+      <View style={[styles.statsBar, isDark && { backgroundColor: themeColors.surface, borderBottomColor: themeColors.border }]}>
+        <Text style={[styles.statsText, isDark && { color: themeColors.textMuted }]}>
           {markedCount} marked · {unmarkedCount} unmarked
         </Text>
       </View>
@@ -368,23 +376,24 @@ function WorkerAttendanceCard({
   getStatusColor: (status: AttendanceStatus | null) => string;
   getStatusLabel: (status: AttendanceStatus) => string;
 }) {
+  const { isDark, themeColors } = useAppStore();
   // Overtime is completely hidden by default
   const [showOvertime, setShowOvertime] = useState(false);
 
   const statuses: AttendanceStatus[] = ['present', 'half_day', 'absent', 'holiday', 'leave'];
 
   return (
-    <Card style={styles.workerCard}>
+    <Card style={[styles.workerCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 }]}>
       <View style={styles.workerHeader}>
         <Avatar name={item.worker.name} size="md" />
         <View style={styles.workerInfo}>
-          <Text style={styles.workerName}>{item.worker.name}</Text>
-          <Text style={styles.workerId}>{item.worker.employee_id}</Text>
+          <Text style={[styles.workerName, isDark && { color: themeColors.text }]}>{item.worker.name}</Text>
+          <Text style={[styles.workerId, isDark && { color: themeColors.textMuted }]}>{item.worker.employee_id}</Text>
         </View>
         {item.marked_at && (
-          <View style={styles.timestampBadge}>
-            <Ionicons name="time-outline" size={12} color={colors.success[700]} />
-            <Text style={styles.timestampText}>
+          <View style={[styles.timestampBadge, isDark && { backgroundColor: 'rgba(74, 222, 128, 0.15)', borderColor: 'rgba(74, 222, 128, 0.3)' }]}>
+            <Ionicons name="time-outline" size={12} color={isDark ? '#4ADE80' : colors.success[700]} />
+            <Text style={[styles.timestampText, isDark && { color: '#4ADE80' }]}>
               Marked {format(parseDbTimestamp(item.marked_at), 'h:mm a')}
             </Text>
           </View>
@@ -393,53 +402,61 @@ function WorkerAttendanceCard({
 
       {/* Status Buttons - Auto-save immediately on press */}
       <View style={styles.statusButtons}>
-        {statuses.map((status) => (
-          <TouchableOpacity
-            key={status}
-            style={[
-              styles.statusButton,
-              item.status === status && {
-                backgroundColor: getStatusColor(status) + '20',
-                borderColor: getStatusColor(status),
-                borderWidth: 2,
-              },
-            ]}
-            onPress={() => onSelectStatus(item.worker.id, status)}
-          >
-            <Text
+        {statuses.map((status) => {
+          const isSelected = item.status === status;
+          const statusColor = getStatusColor(status);
+          return (
+            <TouchableOpacity
+              key={status}
               style={[
-                styles.statusButtonText,
-                {
-                  color:
-                    item.status === status
-                      ? getStatusColor(status)
-                      : colors.neutral[600],
-                  fontWeight: item.status === status ? '700' : '500',
+                styles.statusButton,
+                isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+                isSelected && {
+                  backgroundColor: statusColor + (isDark ? '35' : '20'),
+                  borderColor: statusColor,
+                  borderWidth: 2,
                 },
               ]}
+              onPress={() => onSelectStatus(item.worker.id, status)}
             >
-              {getStatusLabel(status)}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.statusButtonText,
+                  {
+                    color: isSelected
+                      ? statusColor
+                      : isDark
+                      ? themeColors.textSecondary
+                      : colors.neutral[600],
+                    fontWeight: isSelected ? '700' : '500',
+                  },
+                ]}
+              >
+                {getStatusLabel(status)}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Leave Type (if leave selected) */}
       {item.status === 'leave' && (
-        <View style={styles.leaveTypeContainer}>
-          <Text style={styles.leaveTypeLabel}>Leave Type:</Text>
+        <View style={[styles.leaveTypeContainer, isDark && { borderTopColor: themeColors.border }]}>
+          <Text style={[styles.leaveTypeLabel, isDark && { color: themeColors.textSecondary }]}>Leave Type:</Text>
           <View style={styles.leaveTypeButtons}>
             <TouchableOpacity
               style={[
                 styles.leaveTypeButton,
-                item.leave_type === 'paid' && styles.leaveTypeButtonActive,
+                isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border, borderWidth: 1 },
+                item.leave_type === 'paid' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.leaveTypeButtonActive),
               ]}
               onPress={() => onUpdate(item.worker.id, { leave_type: 'paid' })}
             >
               <Text
                 style={[
                   styles.leaveTypeText,
-                  item.leave_type === 'paid' && styles.leaveTypeTextActive,
+                  isDark && { color: themeColors.textSecondary },
+                  item.leave_type === 'paid' && (isDark ? { color: '#60A5FA' } : styles.leaveTypeTextActive),
                 ]}
               >
                 Paid
@@ -448,14 +465,16 @@ function WorkerAttendanceCard({
             <TouchableOpacity
               style={[
                 styles.leaveTypeButton,
-                item.leave_type === 'unpaid' && styles.leaveTypeButtonActive,
+                isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border, borderWidth: 1 },
+                item.leave_type === 'unpaid' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.leaveTypeButtonActive),
               ]}
               onPress={() => onUpdate(item.worker.id, { leave_type: 'unpaid' })}
             >
               <Text
                 style={[
                   styles.leaveTypeText,
-                  item.leave_type === 'unpaid' && styles.leaveTypeTextActive,
+                  isDark && { color: themeColors.textSecondary },
+                  item.leave_type === 'unpaid' && (isDark ? { color: '#60A5FA' } : styles.leaveTypeTextActive),
                 ]}
               >
                 Unpaid
@@ -468,16 +487,16 @@ function WorkerAttendanceCard({
       {/* Overtime Toggle Button (Hidden by default) */}
       {(item.status === 'present' || item.status === 'half_day') && (
         <TouchableOpacity
-          style={styles.toggleOtButton}
+          style={[styles.toggleOtButton, isDark && { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}
           onPress={() => setShowOvertime(!showOvertime)}
           activeOpacity={0.7}
         >
           <Ionicons
             name={showOvertime ? 'chevron-up-circle-outline' : 'add-circle-outline'}
             size={16}
-            color={colors.primary[600]}
+            color={isDark ? '#60A5FA' : colors.primary[600]}
           />
-          <Text style={styles.toggleOtText}>
+          <Text style={[styles.toggleOtText, isDark && { color: '#60A5FA' }]}>
             {showOvertime
               ? 'Hide Overtime'
               : item.overtime_hours && parseFloat(item.overtime_hours) > 0
@@ -489,16 +508,16 @@ function WorkerAttendanceCard({
 
       {/* Overtime Container (Only shown when explicitly toggled open) */}
       {(item.status === 'present' || item.status === 'half_day') && showOvertime && (
-        <View style={styles.overtimeContainer}>
+        <View style={[styles.overtimeContainer, isDark && { borderTopColor: themeColors.border }]}>
           <View style={styles.overtimeHeader}>
-            <Text style={styles.overtimeLabel}>Overtime (optional)</Text>
+            <Text style={[styles.overtimeLabel, isDark && { color: themeColors.textSecondary }]}>Overtime (optional)</Text>
             <TouchableOpacity onPress={() => setShowOvertime(false)}>
-              <Ionicons name="close-circle" size={20} color={colors.neutral[400]} />
+              <Ionicons name="close-circle" size={20} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
             </TouchableOpacity>
           </View>
           <View style={styles.overtimeInputs}>
             <View style={styles.overtimeInput}>
-              <Text style={styles.overtimeInputLabel}>Hours</Text>
+              <Text style={[styles.overtimeInputLabel, isDark && { color: themeColors.textMuted }]}>Hours</Text>
               <TextInput
                 value={item.overtime_hours}
                 onChangeText={(text) =>
@@ -511,7 +530,7 @@ function WorkerAttendanceCard({
               />
             </View>
             <View style={styles.overtimeInput}>
-              <Text style={styles.overtimeInputLabel}>Amount</Text>
+              <Text style={[styles.overtimeInputLabel, isDark && { color: themeColors.textMuted }]}>Amount</Text>
               <TextInput
                 value={item.overtime_amount}
                 onChangeText={(text) =>

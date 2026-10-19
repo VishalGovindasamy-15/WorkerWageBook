@@ -140,6 +140,7 @@ export type AuditAction =
   | 'worker_created'
   | 'worker_edited'
   | 'worker_deactivated'
+  | 'worker_deleted'
   | 'category_created'
   | 'category_renamed'
   | 'backup_created'

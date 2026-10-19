@@ -1,10 +1,20 @@
 // Worker WageBook - Global State Store
 
 import { create } from 'zustand';
+import { Appearance } from 'react-native';
 import { WeekRange, Category, SalaryCalculationRules } from '../types';
 import { getWeekRange, getWeekLabel } from '../utils/helpers';
+import { ThemeMode, ThemeColors, lightTheme, darkTheme } from '../constants/theme';
+import { settingsService } from '../services/settingsService';
 
 interface AppState {
+  // Theme
+  themeMode: ThemeMode;
+  isDark: boolean;
+  themeColors: ThemeColors;
+  setThemeMode: (mode: ThemeMode) => Promise<void>;
+  initTheme: () => Promise<void>;
+
   // Authentication
   isUnlocked: boolean;
   pinSetupRequired: boolean;
@@ -40,12 +50,43 @@ interface AppState {
   hideToast: () => void;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
-  // Authentication
-  isUnlocked: false,
-  pinSetupRequired: false,
-  setUnlocked: (unlocked) => set({ isUnlocked: unlocked }),
-  setPinSetupRequired: (required) => set({ pinSetupRequired: required }),
+export const useAppStore = create<AppState>((set, get) => {
+  const initialScheme = Appearance.getColorScheme();
+  const initialIsDark = initialScheme === 'dark';
+
+  return {
+    // Theme
+    themeMode: 'system',
+    isDark: initialIsDark,
+    themeColors: initialIsDark ? darkTheme : lightTheme,
+    setThemeMode: async (mode) => {
+      await settingsService.setThemeMode(mode);
+      const isDark =
+        mode === 'dark' ||
+        (mode === 'system' && Appearance.getColorScheme() === 'dark');
+      set({
+        themeMode: mode,
+        isDark,
+        themeColors: isDark ? darkTheme : lightTheme,
+      });
+    },
+    initTheme: async () => {
+      const saved = await settingsService.getThemeMode();
+      const isDark =
+        saved === 'dark' ||
+        (saved === 'system' && Appearance.getColorScheme() === 'dark');
+      set({
+        themeMode: saved,
+        isDark,
+        themeColors: isDark ? darkTheme : lightTheme,
+      });
+    },
+
+    // Authentication
+    isUnlocked: false,
+    pinSetupRequired: false,
+    setUnlocked: (unlocked) => set({ isUnlocked: unlocked }),
+    setPinSetupRequired: (required) => set({ pinSetupRequired: required }),
 
   // Current week
   currentWeekDate: new Date(),
@@ -107,4 +148,5 @@ export const useAppStore = create<AppState>((set, get) => ({
     }, 3000);
   },
   hideToast: () => set({ toast: null }),
-}));
+  };
+});

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography, shadows } from '../../constants/theme';
 import { Card } from '../../components/ui';
+import { useAppStore } from '../../stores/appStore';
 
 interface ReportItem {
   id: string;
@@ -17,6 +18,7 @@ interface ReportItem {
 
 export function ReportsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { isDark, themeColors } = useAppStore();
   const reports: ReportItem[] = [
     {
       id: 'weekly-statement',
@@ -86,10 +88,10 @@ export function ReportsScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
       <View style={[styles.content, { paddingTop: Math.max(insets.top, spacing[4]) }]}>
-        <Text style={styles.pageTitle}>Reports</Text>
-        <Text style={styles.pageDescription}>
+        <Text style={[styles.pageTitle, isDark && { color: themeColors.text }]}>Reports</Text>
+        <Text style={[styles.pageDescription, isDark && { color: themeColors.textSecondary }]}>
           Generate and export detailed reports for your business
         </Text>
 
@@ -99,16 +101,16 @@ export function ReportsScreen({ navigation }: any) {
             onPress={() => handleReportPress(report.id)}
             activeOpacity={0.7}
           >
-            <Card style={styles.reportCard}>
+            <Card style={[styles.reportCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 }]}>
               <View style={styles.reportContent}>
-                <View style={[styles.reportIcon, { backgroundColor: report.color + '20' }]}>
+                <View style={[styles.reportIcon, { backgroundColor: report.color + (isDark ? '30' : '20') }]}>
                   <Ionicons name={report.icon} size={28} color={report.color} />
                 </View>
                 <View style={styles.reportInfo}>
-                  <Text style={styles.reportTitle}>{report.title}</Text>
-                  <Text style={styles.reportDescription}>{report.description}</Text>
+                  <Text style={[styles.reportTitle, isDark && { color: themeColors.text }]}>{report.title}</Text>
+                  <Text style={[styles.reportDescription, isDark && { color: themeColors.textSecondary }]}>{report.description}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={24} color={colors.neutral[400]} />
+                <Ionicons name="chevron-forward" size={24} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
               </View>
             </Card>
           </TouchableOpacity>

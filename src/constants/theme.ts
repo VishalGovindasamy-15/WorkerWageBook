@@ -61,6 +61,71 @@ export const colors = {
   black: '#000000',
 };
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+export interface ThemeColors {
+  background: string;
+  surface: string;
+  card: string;
+  cardBorder: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  border: string;
+  divider: string;
+  inputBg: string;
+  inputBorder: string;
+  modalOverlay: string;
+  tabBarBg: string;
+  tabBarBorder: string;
+  headerBg: string;
+  headerText: string;
+  statCardBg: string;
+  isDark: boolean;
+}
+
+export const lightTheme: ThemeColors = {
+  background: '#F9FAFB',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  cardBorder: '#E5E7EB',
+  text: '#111827',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  border: '#E5E7EB',
+  divider: '#F3F4F6',
+  inputBg: '#FFFFFF',
+  inputBorder: '#D1D5DB',
+  modalOverlay: 'rgba(0,0,0,0.5)',
+  tabBarBg: '#FFFFFF',
+  tabBarBorder: '#E5E7EB',
+  headerBg: '#FFFFFF',
+  headerText: '#111827',
+  statCardBg: '#FFFFFF',
+  isDark: false,
+};
+
+export const darkTheme: ThemeColors = {
+  background: '#0F172A',
+  surface: '#1E293B',
+  card: '#1E293B',
+  cardBorder: '#334155',
+  text: '#FFFFFF',
+  textSecondary: '#CBD5E1',
+  textMuted: '#94A3B8',
+  border: '#334155',
+  divider: '#334155',
+  inputBg: '#090D16',
+  inputBorder: '#475569',
+  modalOverlay: 'rgba(0,0,0,0.75)',
+  tabBarBg: '#0F172A',
+  tabBarBorder: '#1E293B',
+  headerBg: '#0F172A',
+  headerText: '#FFFFFF',
+  statCardBg: '#1E293B',
+  isDark: true,
+};
+
 export const spacing = {
   1: 4,
   2: 8,

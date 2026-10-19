@@ -15,8 +15,10 @@ import { colors, spacing, typography, shadows } from '../../constants/theme';
 import { Card, Button } from '../../components/ui';
 import { categoryService } from '../../services/categoryService';
 import { Category } from '../../types';
+import { useAppStore } from '../../stores/appStore';
 
 export function CategoryManagementScreen() {
+  const { isDark, themeColors } = useAppStore();
   const [categories, setCategories] = useState<(Category & { worker_count: number })[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -109,16 +111,16 @@ export function CategoryManagementScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
+        <Text style={[styles.loadingText, isDark && { color: themeColors.textMuted }]}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
       <ScrollView style={styles.scrollView}>
-        <Text style={styles.description}>
+        <Text style={[styles.description, isDark && { color: themeColors.textSecondary }]}>
           Categories help you organize and filter workers. Create categories for different job roles
           like Mason, Carpenter, Electrician, etc.
         </Text>
@@ -128,15 +130,26 @@ export function CategoryManagementScreen() {
             {editingId === category.id ? (
               <View style={styles.editContainer}>
                 <RNTextInput
-                  style={styles.editInput}
+                  style={[
+                    styles.editInput,
+                    isDark && {
+                      backgroundColor: themeColors.inputBg,
+                      borderColor: colors.primary[500],
+                      color: themeColors.text,
+                    },
+                  ]}
                   value={editingName}
                   onChangeText={setEditingName}
                   autoFocus
                   placeholder="Category name"
+                  placeholderTextColor={isDark ? themeColors.textMuted : colors.neutral[400]}
                 />
                 <View style={styles.editButtons}>
-                  <TouchableOpacity onPress={cancelEdit} style={styles.editButton}>
-                    <Text style={styles.editButtonText}>Cancel</Text>
+                  <TouchableOpacity
+                    onPress={cancelEdit}
+                    style={[styles.editButton, isDark && { backgroundColor: themeColors.cardBorder }]}
+                  >
+                    <Text style={[styles.editButtonText, isDark && { color: themeColors.textSecondary }]}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleEdit(category.id)}
@@ -149,8 +162,8 @@ export function CategoryManagementScreen() {
             ) : (
               <View style={styles.categoryRow}>
                 <View style={styles.categoryInfo}>
-                  <Text style={styles.categoryName}>{category.name}</Text>
-                  <Text style={styles.categoryCount}>
+                  <Text style={[styles.categoryName, isDark && { color: themeColors.text }]}>{category.name}</Text>
+                  <Text style={[styles.categoryCount, isDark && { color: themeColors.textMuted }]}>
                     {category.worker_count} {category.worker_count === 1 ? 'worker' : 'workers'}
                   </Text>
                 </View>
@@ -159,7 +172,7 @@ export function CategoryManagementScreen() {
                     onPress={() => startEdit(category)}
                     style={styles.actionButton}
                   >
-                    <Ionicons name="create-outline" size={20} color={colors.primary[600]} />
+                    <Ionicons name="create-outline" size={20} color={isDark ? '#60A5FA' : colors.primary[600]} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleDelete(category)}
@@ -168,7 +181,7 @@ export function CategoryManagementScreen() {
                     <Ionicons
                       name="trash-outline"
                       size={20}
-                      color={category.worker_count > 0 ? colors.neutral[300] : colors.danger[600]}
+                      color={category.worker_count > 0 ? (isDark ? '#475569' : colors.neutral[300]) : (isDark ? '#F87171' : colors.danger[600])}
                     />
                   </TouchableOpacity>
                 </View>
@@ -191,13 +204,21 @@ export function CategoryManagementScreen() {
       {/* Add Category Modal */}
       {showAddModal && (
         <View style={styles.modalOverlay}>
-          <Card style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Category</Text>
+          <Card style={[styles.modalContent, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
+            <Text style={[styles.modalTitle, isDark && { color: themeColors.text }]}>Add Category</Text>
             <RNTextInput
-              style={styles.modalInput}
+              style={[
+                styles.modalInput,
+                isDark && {
+                  backgroundColor: themeColors.inputBg,
+                  borderColor: themeColors.inputBorder,
+                  color: themeColors.text,
+                },
+              ]}
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               placeholder="Category name"
+              placeholderTextColor={isDark ? themeColors.textMuted : colors.neutral[400]}
               autoFocus
             />
             <View style={styles.modalButtons}>

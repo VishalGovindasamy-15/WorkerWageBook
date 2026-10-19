@@ -32,6 +32,8 @@ export function WeeklySalaryScreen({ navigation }: any) {
     goToPreviousWeek,
     goToNextWeek,
     showToast,
+    isDark,
+    themeColors,
   } = useAppStore();
 
   const [calculations, setCalculations] = useState<SalaryCalculation[]>([]);
@@ -187,20 +189,20 @@ export function WeeklySalaryScreen({ navigation }: any) {
   const pendingNetTotal = unsettledCalculations.reduce((sum, c) => sum + c.net_pay, 0);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
       {/* Week Selector Bar */}
       <View style={styles.weekSelectorWrapper}>
-        <Card style={styles.weekCard} padding={spacing[3]}>
+        <Card style={[styles.weekCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]} padding={spacing[3]}>
           <TouchableOpacity
             onPress={goToPreviousWeek}
             style={styles.weekArrow}
             activeOpacity={0.7}
             accessibilityLabel="Previous week"
           >
-            <Ionicons name="chevron-back" size={22} color={colors.primary[600]} />
+            <Ionicons name="chevron-back" size={22} color={colors.primary[500]} />
           </TouchableOpacity>
           <View style={styles.weekCenter}>
-            <Text style={styles.weekLabel}>{weekLabel}</Text>
+            <Text style={[styles.weekLabel, isDark && { color: themeColors.text }]}>{weekLabel}</Text>
           </View>
           <TouchableOpacity
             onPress={goToNextWeek}
@@ -208,25 +210,25 @@ export function WeeklySalaryScreen({ navigation }: any) {
             activeOpacity={0.7}
             accessibilityLabel="Next week"
           >
-            <Ionicons name="chevron-forward" size={22} color={colors.primary[600]} />
+            <Ionicons name="chevron-forward" size={22} color={colors.primary[500]} />
           </TouchableOpacity>
         </Card>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.neutral[400]} />
+        <View style={[styles.searchBar, isDark && { backgroundColor: themeColors.inputBg, borderColor: themeColors.border }]}>
+          <Ionicons name="search" size={20} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
           <TextInput
             placeholder="Search workers by name or ID..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            style={styles.searchInput}
-            placeholderTextColor={colors.neutral[400]}
+            style={[styles.searchInput, isDark && { color: themeColors.text }]}
+            placeholderTextColor={isDark ? themeColors.textMuted : colors.neutral[400]}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={colors.neutral[400]} />
+              <Ionicons name="close-circle" size={18} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
             </TouchableOpacity>
           )}
         </View>
@@ -236,26 +238,50 @@ export function WeeklySalaryScreen({ navigation }: any) {
       <View style={styles.filtersSection}>
         <View style={styles.filterChipsRow}>
           <TouchableOpacity
-            style={[styles.filterChip, statusFilter === 'all' && styles.filterChipActive]}
+            style={[
+              styles.filterChip,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+              statusFilter === 'all' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+            ]}
             onPress={() => setStatusFilter('all')}
           >
-            <Text style={[styles.filterChipText, statusFilter === 'all' && styles.filterChipTextActive]}>
+            <Text style={[
+              styles.filterChipText,
+              isDark && { color: themeColors.textSecondary },
+              statusFilter === 'all' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+            ]}>
               All ({calculations.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.filterChip, statusFilter === 'unsettled' && styles.filterChipActive]}
+            style={[
+              styles.filterChip,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+              statusFilter === 'unsettled' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+            ]}
             onPress={() => setStatusFilter('unsettled')}
           >
-            <Text style={[styles.filterChipText, statusFilter === 'unsettled' && styles.filterChipTextActive]}>
+            <Text style={[
+              styles.filterChipText,
+              isDark && { color: themeColors.textSecondary },
+              statusFilter === 'unsettled' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+            ]}>
               Pending ({calculations.length - settledCount})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.filterChip, statusFilter === 'settled' && styles.filterChipActive]}
+            style={[
+              styles.filterChip,
+              isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+              statusFilter === 'settled' && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.filterChipActive),
+            ]}
             onPress={() => setStatusFilter('settled')}
           >
-            <Text style={[styles.filterChipText, statusFilter === 'settled' && styles.filterChipTextActive]}>
+            <Text style={[
+              styles.filterChipText,
+              isDark && { color: themeColors.textSecondary },
+              statusFilter === 'settled' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
+            ]}>
               Settled ({settledCount})
             </Text>
           </TouchableOpacity>
@@ -268,9 +294,9 @@ export function WeeklySalaryScreen({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Week Summary Card */}
-        <Card style={styles.summaryCard}>
+        <Card style={[styles.summaryCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
           <View style={styles.summaryHeader}>
-            <Text style={styles.summaryTitle}>Week Summary</Text>
+            <Text style={[styles.summaryTitle, isDark && { color: themeColors.text }]}>Week Summary</Text>
             <Badge
               label={`${settledCount}/${calculations.length} Settled`}
               variant={settledCount === calculations.length && calculations.length > 0 ? 'success' : 'info'}
@@ -279,24 +305,24 @@ export function WeeklySalaryScreen({ navigation }: any) {
           </View>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Total Earnings</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(totalGross)}</Text>
+              <Text style={[styles.summaryLabel, isDark && { color: themeColors.textSecondary }]}>Total Earnings</Text>
+              <Text style={[styles.summaryValue, isDark && { color: themeColors.text }]}>{formatCurrency(totalGross)}</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Advances Recovered</Text>
-              <Text style={[styles.summaryValue, { color: colors.danger[600] }]}>
+              <Text style={[styles.summaryLabel, isDark && { color: themeColors.textSecondary }]}>Advances Recovered</Text>
+              <Text style={[styles.summaryValue, { color: isDark ? '#F87171' : colors.danger[600] }]}>
                 -{formatCurrency(totalAdvances)}
               </Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Net Payable</Text>
-              <Text style={[styles.summaryValue, { color: colors.success[700], fontWeight: '700' }]}>
+              <Text style={[styles.summaryLabel, isDark && { color: themeColors.textSecondary }]}>Net Payable</Text>
+              <Text style={[styles.summaryValue, { color: isDark ? '#4ADE80' : colors.success[700], fontWeight: '700' }]}>
                 {formatCurrency(totalNet)}
               </Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Pending Payout</Text>
-              <Text style={[styles.summaryValue, { color: pendingNetTotal > 0 ? colors.warning[700] : colors.neutral[500] }]}>
+              <Text style={[styles.summaryLabel, isDark && { color: themeColors.textSecondary }]}>Pending Payout</Text>
+              <Text style={[styles.summaryValue, { color: pendingNetTotal > 0 ? (isDark ? '#FBBF24' : colors.warning[700]) : (isDark ? themeColors.textMuted : colors.neutral[500]) }]}>
                 {formatCurrency(pendingNetTotal)}
               </Text>
             </View>
@@ -305,15 +331,15 @@ export function WeeklySalaryScreen({ navigation }: any) {
 
         {/* Section Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>WORKERS ({filteredCalculations.length})</Text>
+          <Text style={[styles.sectionTitle, isDark && { color: themeColors.textSecondary }]}>WORKERS ({filteredCalculations.length})</Text>
         </View>
 
         {/* Empty state */}
         {filteredCalculations.length === 0 && !loading && (
-          <Card style={styles.emptyCard}>
-            <Ionicons name="people-outline" size={40} color={colors.neutral[300]} />
-            <Text style={styles.emptyTitle}>No workers match your filter</Text>
-            <Text style={styles.emptySubtitle}>Try changing the search query or status filter.</Text>
+          <Card style={[styles.emptyCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
+            <Ionicons name="people-outline" size={40} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
+            <Text style={[styles.emptyTitle, isDark && { color: themeColors.text }]}>No workers match your filter</Text>
+            <Text style={[styles.emptySubtitle, isDark && { color: themeColors.textSecondary }]}>Try changing the search query or status filter.</Text>
           </Card>
         )}
 
@@ -326,7 +352,7 @@ export function WeeklySalaryScreen({ navigation }: any) {
           const selectedMethod = workerPaymentMethod[calc.worker_id] || 'cash';
 
           return (
-            <Card key={calc.worker_id} style={styles.workerCard}>
+            <Card key={calc.worker_id} style={[styles.workerCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 }]}>
               {/* Worker Header */}
               <TouchableOpacity
                 style={styles.workerHeader}
@@ -335,15 +361,15 @@ export function WeeklySalaryScreen({ navigation }: any) {
               >
                 <Avatar name={calc.worker_name} size="md" />
                 <View style={styles.workerInfo}>
-                  <Text style={styles.workerName}>{calc.worker_name}</Text>
-                  <Text style={styles.workerMeta}>
+                  <Text style={[styles.workerName, isDark && { color: themeColors.text }]}>{calc.worker_name}</Text>
+                  <Text style={[styles.workerMeta, isDark && { color: themeColors.textMuted }]}>
                     {worker?.employee_id ? `${worker.employee_id} · ` : ''}
                     {calc.days_worked}d {calc.half_days_worked > 0 ? `+ ${calc.half_days_worked}h` : ''}
                     {calc.overtime_hours > 0 ? ` · OT ${calc.overtime_hours}h` : ''}
                   </Text>
                 </View>
                 <View style={styles.workerAmount}>
-                  <Text style={[styles.netPayAmount, settled && styles.settledAmount]}>
+                  <Text style={[styles.netPayAmount, isDark && { color: themeColors.text }, settled && (isDark ? { color: '#4ADE80' } : styles.settledAmount)]}>
                     {formatCurrency(calc.net_pay)}
                   </Text>
                   {settled ? (
@@ -355,29 +381,29 @@ export function WeeklySalaryScreen({ navigation }: any) {
                 <Ionicons
                   name={expanded ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color={colors.neutral[400]}
+                  color={isDark ? themeColors.textMuted : colors.neutral[400]}
                 />
               </TouchableOpacity>
 
               {/* Expanded Breakdown */}
               {expanded && (
-                <View style={styles.breakdown}>
+                <View style={[styles.breakdown, isDark && { borderTopColor: themeColors.border }]}>
                   {/* Earnings */}
                   <View style={styles.breakdownSection}>
-                    <Text style={styles.breakdownSectionTitle}>EARNINGS</Text>
+                    <Text style={[styles.breakdownSectionTitle, isDark && { color: themeColors.textSecondary }]}>EARNINGS</Text>
                     {calc.line_items
                       .filter((item: SettlementItem) => item.amount > 0)
                       .map((item: SettlementItem, idx: number) => (
                         <View key={idx} style={styles.breakdownRow}>
-                          <Text style={styles.breakdownDesc}>{item.description}</Text>
-                          <Text style={[styles.breakdownAmount, { color: colors.success[600] }]}>
+                          <Text style={[styles.breakdownDesc, isDark && { color: themeColors.textSecondary }]}>{item.description}</Text>
+                          <Text style={[styles.breakdownAmount, { color: isDark ? '#4ADE80' : colors.success[600] }]}>
                             +{formatCurrency(item.amount)}
                           </Text>
                         </View>
                       ))}
-                    <View style={styles.breakdownTotal}>
-                      <Text style={styles.breakdownTotalLabel}>Gross Earnings</Text>
-                      <Text style={styles.breakdownTotalAmount}>
+                    <View style={[styles.breakdownTotal, isDark && { borderTopColor: themeColors.border }]}>
+                      <Text style={[styles.breakdownTotalLabel, isDark && { color: themeColors.text }]}>Gross Earnings</Text>
+                      <Text style={[styles.breakdownTotalAmount, isDark && { color: themeColors.text }]}>
                         {formatCurrency(calc.gross_earnings)}
                       </Text>
                     </View>
@@ -386,13 +412,13 @@ export function WeeklySalaryScreen({ navigation }: any) {
                   {/* Deductions */}
                   {calc.total_advances_recovered > 0 && (
                     <View style={styles.breakdownSection}>
-                      <Text style={styles.breakdownSectionTitle}>DEDUCTIONS</Text>
+                      <Text style={[styles.breakdownSectionTitle, isDark && { color: themeColors.textSecondary }]}>DEDUCTIONS</Text>
                       {calc.line_items
                         .filter((item: SettlementItem) => item.amount < 0)
                         .map((item: SettlementItem, idx: number) => (
                           <View key={idx} style={styles.breakdownRow}>
-                            <Text style={styles.breakdownDesc}>{item.description}</Text>
-                            <Text style={[styles.breakdownAmount, { color: colors.danger[600] }]}>
+                            <Text style={[styles.breakdownDesc, isDark && { color: themeColors.textSecondary }]}>{item.description}</Text>
+                            <Text style={[styles.breakdownAmount, { color: isDark ? '#F87171' : colors.danger[600] }]}>
                               {formatCurrency(item.amount)}
                             </Text>
                           </View>
@@ -401,16 +427,16 @@ export function WeeklySalaryScreen({ navigation }: any) {
                   )}
 
                   {/* Net Payable */}
-                  <View style={styles.netPayRow}>
-                    <Text style={styles.netPayLabel}>NET PAYABLE</Text>
-                    <Text style={styles.netPayValue}>{formatCurrency(calc.net_pay)}</Text>
+                  <View style={[styles.netPayRow, isDark && { borderTopColor: themeColors.border }]}>
+                    <Text style={[styles.netPayLabel, isDark && { color: themeColors.text }]}>NET PAYABLE</Text>
+                    <Text style={[styles.netPayValue, isDark && { color: '#4ADE80' }]}>{formatCurrency(calc.net_pay)}</Text>
                   </View>
 
                   {/* Carry-forward Notice */}
                   {calc.carry_forward_advance > 0 && (
-                    <View style={styles.carryForward}>
-                      <Ionicons name="information-circle" size={16} color={colors.warning[600]} />
-                      <Text style={styles.carryForwardText}>
+                    <View style={[styles.carryForward, isDark && { backgroundColor: 'rgba(251, 191, 36, 0.15)' }]}>
+                      <Ionicons name="information-circle" size={16} color={isDark ? '#FBBF24' : colors.warning[600]} />
+                      <Text style={[styles.carryForwardText, isDark && { color: '#FBBF24' }]}>
                         Advance carry-forward: {formatCurrency(calc.carry_forward_advance)}
                       </Text>
                     </View>
@@ -418,26 +444,26 @@ export function WeeklySalaryScreen({ navigation }: any) {
 
                   {/* Settlement Action or Status */}
                   {settled ? (
-                    <View style={styles.settledInfoBox}>
+                    <View style={[styles.settledInfoBox, isDark && { backgroundColor: 'rgba(74, 222, 128, 0.15)' }]}>
                       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
-                        <Ionicons name="checkmark-circle" size={18} color={colors.success[600]} />
-                        <Text style={styles.settledInfoText}>
+                        <Ionicons name="checkmark-circle" size={18} color={isDark ? '#4ADE80' : colors.success[600]} />
+                        <Text style={[styles.settledInfoText, isDark && { color: '#4ADE80' }]}>
                           Settled on {settlement?.confirmed_at ? settlement.confirmed_at.split('T')[0] : 'Locked'} via{' '}
                           {settlement?.payment_method?.toUpperCase() || 'CASH'}
                         </Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.downloadPayslipBtn}
+                        style={[styles.downloadPayslipBtn, isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border }]}
                         onPress={() => handleDownloadPayslip(calc)}
                         activeOpacity={0.8}
                       >
-                        <Ionicons name="document-text-outline" size={16} color={colors.primary[600]} />
-                        <Text style={styles.downloadPayslipText}>Payslip PDF</Text>
+                        <Ionicons name="document-text-outline" size={16} color={isDark ? '#60A5FA' : colors.primary[600]} />
+                        <Text style={[styles.downloadPayslipText, isDark && { color: '#60A5FA' }]}>Payslip PDF</Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <View style={styles.settleActionBox}>
-                      <Text style={styles.methodLabel}>Payment Method</Text>
+                    <View style={[styles.settleActionBox, isDark && { borderTopColor: themeColors.border }]}>
+                      <Text style={[styles.methodLabel, isDark && { color: themeColors.textSecondary }]}>Payment Method</Text>
                       <View style={styles.methodRow}>
                         {(['cash', 'upi', 'bank_transfer'] as const).map((method) => {
                           const isSelected = selectedMethod === method;
@@ -445,7 +471,11 @@ export function WeeklySalaryScreen({ navigation }: any) {
                           return (
                             <TouchableOpacity
                               key={method}
-                              style={[styles.methodChip, isSelected && styles.methodChipSelected]}
+                              style={[
+                                styles.methodChip,
+                                isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border },
+                                isSelected && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.methodChipSelected),
+                              ]}
                               onPress={() =>
                                 setWorkerPaymentMethod((prev) => ({
                                   ...prev,
@@ -453,7 +483,11 @@ export function WeeklySalaryScreen({ navigation }: any) {
                                 }))
                               }
                             >
-                              <Text style={[styles.methodChipText, isSelected && styles.methodChipTextSelected]}>
+                              <Text style={[
+                                styles.methodChipText,
+                                isDark && { color: themeColors.textSecondary },
+                                isSelected && (isDark ? { color: '#60A5FA' } : styles.methodChipTextSelected),
+                              ]}>
                                 {label}
                               </Text>
                             </TouchableOpacity>
