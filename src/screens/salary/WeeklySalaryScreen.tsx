@@ -89,22 +89,29 @@ export function WeeklySalaryScreen({ navigation }: any) {
 
   const weekLabel = getWeekLabel(currentWeekDate, weekStartsOn);
 
-  const isWorkerSettled = (workerId: number): boolean => {
-    return settlements.some((s) => s.worker_id === workerId);
-  };
-
   const getSettlement = (workerId: number): SalarySettlement | undefined => {
     return settlements.find((s) => s.worker_id === workerId);
   };
 
+  const getWorkerPaymentSummary = (calc: SalaryCalculation) => {
+    const settlement = getSettlement(calc.worker_id);
+    const alreadyPaid = settlement ? settlement.net_pay : 0;
+    const remainingDue = Math.max(0, calc.net_pay - alreadyPaid);
+    const isFullySettled = settlement ? remainingDue === 0 : false;
+    const isPartiallySettled = settlement ? remainingDue > 0 : false;
+    return { settlement, alreadyPaid, remainingDue, isFullySettled, isPartiallySettled };
+  };
+
   const handleSettleWorker = async (calc: SalaryCalculation) => {
+    const { settlement, alreadyPaid, remainingDue } = getWorkerPaymentSummary(calc);
+    const amountToPay = settlement ? remainingDue : calc.net_pay;
     const method = workerPaymentMethod[calc.worker_id] || 'cash';
     const methodLabel = method === 'bank_transfer' ? 'Bank Transfer' : method.toUpperCase();
 
     const doSettle = async () => {
       try {
         await salaryService.settle(calc, method);
-        showToast(`Salary settled for ${calc.worker_name}`, 'success');
+        showToast(`Salary settled for ${calc.worker_name} (${formatCurrency(amountToPay)})`, 'success');
         loadData();
       } catch (error: any) {
         if (Platform.OS === 'web') {
@@ -115,10 +122,13 @@ export function WeeklySalaryScreen({ navigation }: any) {
       }
     };
 
+    const confirmTitle = settlement ? 'Confirm Remaining Payment' : 'Confirm Settlement';
+    const confirmMsg = settlement
+      ? `Pay remaining balance for ${calc.worker_name}?\n\nAlready Paid: ${formatCurrency(alreadyPaid)}\nRemaining Due: ${formatCurrency(amountToPay)}\nPayment Method: ${methodLabel}`
+      : `Settle salary for ${calc.worker_name}?\n\nNet Pay: ${formatCurrency(amountToPay)}\nPayment Method: ${methodLabel}`;
+
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        `Confirm Settlement for ${calc.worker_name}?\n\nNet Pay: ${formatCurrency(calc.net_pay)}\nPayment Method: ${methodLabel}`
-      );
+      const confirmed = window.confirm(`${confirmTitle}\n\n${confirmMsg}`);
       if (confirmed) {
         await doSettle();
       }
@@ -126,12 +136,12 @@ export function WeeklySalaryScreen({ navigation }: any) {
     }
 
     Alert.alert(
-      'Confirm Settlement',
-      `Settle salary for ${calc.worker_name}?\n\nNet Pay: ${formatCurrency(calc.net_pay)}\nPayment Method: ${methodLabel}`,
+      confirmTitle,
+      confirmMsg,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Confirm & Pay',
+          text: settlement ? 'Pay Remaining' : 'Confirm & Pay',
           onPress: doSettle,
         },
       ]
@@ -163,9 +173,9 @@ export function WeeklySalaryScreen({ navigation }: any) {
 
   // Filter calculations by status and search query
   const filteredCalculations = calculations.filter((calc) => {
-    const settled = isWorkerSettled(calc.worker_id);
-    if (statusFilter === 'unsettled' && settled) return false;
-    if (statusFilter === 'settled' && !settled) return false;
+    const { isFullySettled } = getWorkerPaymentSummary(calc);
+    if (statusFilter === 'unsettled' && isFullySettled) return false;
+    if (statusFilter === 'settled' && !isFullySettled) return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -181,12 +191,21 @@ export function WeeklySalaryScreen({ navigation }: any) {
   const totalGross = calculations.reduce((sum, c) => sum + c.gross_earnings, 0);
   const totalAdvances = calculations.reduce((sum, c) => sum + c.total_advances_recovered, 0);
   const totalNet = calculations.reduce((sum, c) => sum + c.net_pay, 0);
-  const settledCount = settlements.length;
 
-  const unsettledCalculations = calculations.filter(
-    (calc) => !settlements.find((s) => s.worker_id === calc.worker_id)
-  );
-  const pendingNetTotal = unsettledCalculations.reduce((sum, c) => sum + c.net_pay, 0);
+  // Fully settled count
+  const fullySettledCount = calculations.filter((c) => {
+    const { isFullySettled } = getWorkerPaymentSummary(c);
+    return isFullySettled;
+  }).length;
+
+  // Pending count includes completely unsettled and partially settled
+  const pendingCount = calculations.length - fullySettledCount;
+
+  // Total pending payout across all workers (unsettled + remaining due on partially settled)
+  const pendingNetTotal = calculations.reduce((sum, c) => {
+    const { remainingDue } = getWorkerPaymentSummary(c);
+    return sum + remainingDue;
+  }, 0);
 
   return (
     <View style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
@@ -266,7 +285,7 @@ export function WeeklySalaryScreen({ navigation }: any) {
               isDark && { color: themeColors.textSecondary },
               statusFilter === 'unsettled' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
             ]}>
-              Pending ({calculations.length - settledCount})
+              Pending ({pendingCount})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -282,7 +301,7 @@ export function WeeklySalaryScreen({ navigation }: any) {
               isDark && { color: themeColors.textSecondary },
               statusFilter === 'settled' && (isDark ? { color: '#60A5FA' } : styles.filterChipTextActive),
             ]}>
-              Settled ({settledCount})
+              Settled ({fullySettledCount})
             </Text>
           </TouchableOpacity>
         </View>
@@ -298,8 +317,8 @@ export function WeeklySalaryScreen({ navigation }: any) {
           <View style={styles.summaryHeader}>
             <Text style={[styles.summaryTitle, isDark && { color: themeColors.text }]}>Week Summary</Text>
             <Badge
-              label={`${settledCount}/${calculations.length} Settled`}
-              variant={settledCount === calculations.length && calculations.length > 0 ? 'success' : 'info'}
+              label={`${fullySettledCount}/${calculations.length} Settled`}
+              variant={fullySettledCount === calculations.length && calculations.length > 0 ? 'success' : 'info'}
               size="sm"
             />
           </View>
@@ -345,8 +364,7 @@ export function WeeklySalaryScreen({ navigation }: any) {
 
         {/* Workers List */}
         {filteredCalculations.map((calc) => {
-          const settled = isWorkerSettled(calc.worker_id);
-          const settlement = getSettlement(calc.worker_id);
+          const { settlement, alreadyPaid, remainingDue, isFullySettled, isPartiallySettled } = getWorkerPaymentSummary(calc);
           const expanded = expandedWorker === calc.worker_id;
           const worker = workersMap[calc.worker_id];
           const selectedMethod = workerPaymentMethod[calc.worker_id] || 'cash';
@@ -369,11 +387,18 @@ export function WeeklySalaryScreen({ navigation }: any) {
                   </Text>
                 </View>
                 <View style={styles.workerAmount}>
-                  <Text style={[styles.netPayAmount, isDark && { color: themeColors.text }, settled && (isDark ? { color: '#4ADE80' } : styles.settledAmount)]}>
-                    {formatCurrency(calc.net_pay)}
+                  <Text style={[
+                    styles.netPayAmount,
+                    isDark && { color: themeColors.text },
+                    isFullySettled && (isDark ? { color: '#4ADE80' } : styles.settledAmount),
+                    isPartiallySettled && { color: isDark ? '#FBBF24' : colors.warning[700] },
+                  ]}>
+                    {isFullySettled ? formatCurrency(alreadyPaid) : formatCurrency(remainingDue)}
                   </Text>
-                  {settled ? (
+                  {isFullySettled ? (
                     <Badge label="Settled" variant="success" size="sm" />
+                  ) : isPartiallySettled ? (
+                    <Badge label={`Due: ${formatCurrency(remainingDue)}`} variant="warning" size="sm" />
                   ) : (
                     <Badge label="Pending" variant="neutral" size="sm" />
                   )}
@@ -426,9 +451,11 @@ export function WeeklySalaryScreen({ navigation }: any) {
                     </View>
                   )}
 
-                  {/* Net Payable */}
+                  {/* Net Payable / Net Total */}
                   <View style={[styles.netPayRow, isDark && { borderTopColor: themeColors.border }]}>
-                    <Text style={[styles.netPayLabel, isDark && { color: themeColors.text }]}>NET PAYABLE</Text>
+                    <Text style={[styles.netPayLabel, isDark && { color: themeColors.text }]}>
+                      {isPartiallySettled ? 'TOTAL NET EARNED' : 'NET PAYABLE'}
+                    </Text>
                     <Text style={[styles.netPayValue, isDark && { color: '#4ADE80' }]}>{formatCurrency(calc.net_pay)}</Text>
                   </View>
 
@@ -442,8 +469,28 @@ export function WeeklySalaryScreen({ navigation }: any) {
                     </View>
                   )}
 
-                  {/* Settlement Action or Status */}
-                  {settled ? (
+                  {/* Partial Settlement Status Box */}
+                  {isPartiallySettled && (
+                    <View style={[styles.settledInfoBox, { backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : colors.warning[50], marginBottom: spacing[3] }]}>
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+                        <Ionicons name="time" size={18} color={isDark ? '#FBBF24' : colors.warning[600]} />
+                        <Text style={[styles.settledInfoText, { color: isDark ? '#FBBF24' : colors.warning[700] }]}>
+                          Paid so far: {formatCurrency(alreadyPaid)} · New Due: {formatCurrency(remainingDue)}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.downloadPayslipBtn, isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border }]}
+                        onPress={() => handleDownloadPayslip(calc)}
+                        activeOpacity={0.8}
+                      >
+                        <Ionicons name="document-text-outline" size={16} color={isDark ? '#60A5FA' : colors.primary[600]} />
+                        <Text style={[styles.downloadPayslipText, isDark && { color: '#60A5FA' }]}>Payslip</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* Fully Settled Info Box */}
+                  {isFullySettled ? (
                     <View style={[styles.settledInfoBox, isDark && { backgroundColor: 'rgba(74, 222, 128, 0.15)' }]}>
                       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
                         <Ionicons name="checkmark-circle" size={18} color={isDark ? '#4ADE80' : colors.success[600]} />
@@ -463,7 +510,9 @@ export function WeeklySalaryScreen({ navigation }: any) {
                     </View>
                   ) : (
                     <View style={[styles.settleActionBox, isDark && { borderTopColor: themeColors.border }]}>
-                      <Text style={[styles.methodLabel, isDark && { color: themeColors.textSecondary }]}>Payment Method</Text>
+                      <Text style={[styles.methodLabel, isDark && { color: themeColors.textSecondary }]}>
+                        {isPartiallySettled ? 'Payment Method for Remaining Balance' : 'Payment Method'}
+                      </Text>
                       <View style={styles.methodRow}>
                         {(['cash', 'upi', 'bank_transfer'] as const).map((method) => {
                           const isSelected = selectedMethod === method;
@@ -496,7 +545,7 @@ export function WeeklySalaryScreen({ navigation }: any) {
                       </View>
 
                       <Button
-                        title="Confirm and Pay"
+                        title={isPartiallySettled ? `Confirm & Pay Remaining (${formatCurrency(remainingDue)})` : 'Confirm and Pay'}
                         onPress={() => handleSettleWorker(calc)}
                         fullWidth
                         style={{ marginTop: spacing[3] }}

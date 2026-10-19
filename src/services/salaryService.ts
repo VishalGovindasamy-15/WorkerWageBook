@@ -309,13 +309,13 @@ export const salaryService = {
     return calculations;
   },
 
-  // Settle salary for a single worker (with duplicate prevention)
+  // Settle salary for a single worker (with duplicate prevention and incremental settlement)
   async settle(
     calculation: SalaryCalculation,
     paymentMethod: string = 'cash'
   ): Promise<SalarySettlement> {
     return withTransaction(async (db) => {
-      // Check for existing settlement (idempotency)
+      // Check for existing settlement (idempotency & incremental settlement)
       const existing = await db.getFirstAsync<SalarySettlement>(
         `SELECT * FROM salary_settlements 
          WHERE worker_id = ? AND week_start = ? AND week_end = ? AND is_locked = 1`,
@@ -323,8 +323,84 @@ export const salaryService = {
       );
 
       if (existing) {
-        // Idempotent: return existing settlement
-        return existing;
+        // If calculation.net_pay hasn't increased, return existing settlement (idempotent)
+        if (calculation.net_pay <= existing.net_pay) {
+          return existing;
+        }
+
+        // New days or overtime were marked mid-week after the previous settlement!
+        // Update the existing settlement with the new weekly total and lock new attendance
+        const additionalPaid = calculation.net_pay - existing.net_pay;
+        await db.runAsync(
+          `UPDATE salary_settlements SET
+            daily_wage_snapshot = ?, days_worked = ?, half_days_worked = ?,
+            overtime_hours = ?, overtime_earnings = ?, gross_earnings = ?,
+            total_advances_recovered = ?, outstanding_advance_after = ?,
+            other_deductions = ?, bonuses = ?, net_pay = ?,
+            carry_forward_advance = ?, payment_method = ?,
+            confirmed_at = datetime('now'), updated_at = datetime('now')
+           WHERE id = ?`,
+          [
+            calculation.daily_wage_snapshot,
+            calculation.days_worked,
+            calculation.half_days_worked,
+            calculation.overtime_hours,
+            calculation.overtime_earnings,
+            calculation.gross_earnings,
+            calculation.total_advances_recovered,
+            calculation.outstanding_advance_after,
+            calculation.other_deductions,
+            calculation.bonuses,
+            calculation.net_pay,
+            calculation.carry_forward_advance,
+            paymentMethod,
+            existing.id,
+          ]
+        );
+
+        // Delete old line items and insert updated ones
+        await db.runAsync('DELETE FROM settlement_items WHERE settlement_id = ?', [existing.id]);
+        for (const item of calculation.line_items) {
+          await db.runAsync(
+            `INSERT INTO settlement_items (settlement_id, item_type, description, amount, reference_id, reference_type)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              existing.id,
+              item.item_type,
+              item.description,
+              item.amount,
+              item.reference_id,
+              item.reference_type,
+            ]
+          );
+        }
+
+        // Lock all attendance records for this week
+        await db.runAsync(
+          `UPDATE attendance SET is_locked = 1 
+           WHERE worker_id = ? AND work_date BETWEEN ? AND ?`,
+          [calculation.worker_id, calculation.week_start, calculation.week_end]
+        );
+
+        // Log the incremental settlement
+        await auditService.log({
+          action: 'salary_settled',
+          entity_type: 'settlement',
+          entity_id: existing.id,
+          worker_id: calculation.worker_id,
+          new_value: JSON.stringify({
+            week: `${calculation.week_start} to ${calculation.week_end}`,
+            additional_paid: additionalPaid,
+            total_net_pay: calculation.net_pay,
+            advances_recovered: calculation.total_advances_recovered,
+          }),
+        });
+
+        const updated = await db.getFirstAsync<SalarySettlement>(
+          'SELECT * FROM salary_settlements WHERE id = ?',
+          [existing.id]
+        );
+        return updated!;
       }
 
       // Check for draft settlement and update it, or create new
@@ -516,9 +592,18 @@ export const salaryService = {
     );
   },
 
-  // Get total salary pending (unsettled workers for current week)
+  // Get total salary pending (unsettled + remaining balance for partially settled workers for current week)
   async getTotalPending(weekStart: string, weekEnd: string): Promise<number> {
-    const calculations = await this.calculateForAllWorkers(weekStart, weekEnd);
-    return calculations.reduce((sum, calc) => sum + calc.net_pay, 0);
+    const [calculations, settlements] = await Promise.all([
+      this.calculateForAllWorkers(weekStart, weekEnd),
+      this.getForWeek(weekStart, weekEnd),
+    ]);
+    const settlementMap = new Map<number, number>();
+    settlements.forEach((s) => settlementMap.set(s.worker_id, s.net_pay));
+
+    return calculations.reduce((sum, calc) => {
+      const alreadyPaid = settlementMap.get(calc.worker_id) || 0;
+      return sum + Math.max(0, calc.net_pay - alreadyPaid);
+    }, 0);
   },
 };

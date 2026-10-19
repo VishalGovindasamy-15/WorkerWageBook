@@ -35,6 +35,12 @@
       "expo-secure-store",
       "expo-font",
       "expo-splash-screen"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "cbae9919-85d3-4b19-bd1f-e6ab5513b6cc"
+      }
+    },
+    "owner": "world_dominator"
   }
 }

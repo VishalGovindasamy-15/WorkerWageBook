@@ -8,6 +8,10 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { SplashScreen } from './src/screens/SplashScreen';
 import { initializeDatabase } from './src/database/database';
 import { seedService } from './src/services/seedService';
+import { workerService } from './src/services/workerService';
+import { attendanceService } from './src/services/attendanceService';
+import { salaryService } from './src/services/salaryService';
+import { settingsService } from './src/services/settingsService';
 import { colors } from './src/constants/theme';
 import { useAppStore } from './src/stores/appStore';
 

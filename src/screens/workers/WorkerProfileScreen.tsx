@@ -212,7 +212,15 @@ export function WorkerProfileScreen({ route, navigation }: any) {
     ? `${weeklyCalc.days_worked + weeklyCalc.half_days_worked * 0.5}d`
     : '0d';
   const earnedDisplay = weeklyCalc ? formatCurrency(weeklyCalc.gross_earnings) : formatCurrency(0);
-  const netPayDisplay = weeklyCalc ? formatCurrency(weeklyCalc.net_pay) : formatCurrency(0);
+
+  // Partial / Full settlement aware net pay calculation
+  const alreadyPaidWeekly = weeklySettlement ? weeklySettlement.net_pay : 0;
+  const remainingNetDue = weeklyCalc ? Math.max(0, weeklyCalc.net_pay - alreadyPaidWeekly) : 0;
+  const isFullySettledWeekly = weeklySettlement ? remainingNetDue === 0 : false;
+  const isPartiallySettledWeekly = weeklySettlement ? remainingNetDue > 0 : false;
+
+  const netPayDisplay = formatCurrency(isFullySettledWeekly ? 0 : remainingNetDue);
+  const netPayLabel = isFullySettledWeekly ? 'Net Payable (Settled)' : isPartiallySettledWeekly ? 'Net Due (Remaining)' : 'Net Payable';
 
   // Generate 7 days for the weekly strip
   const weekStartObj = parseISO(currentWeek.start);
@@ -225,6 +233,17 @@ export function WorkerProfileScreen({ route, navigation }: any) {
   const calendarGridStart = startOfWeek(monthStart, { weekStartsOn: weekStartsOn as 0 | 1 });
   const calendarGridEnd = endOfWeek(monthEnd, { weekStartsOn: weekStartsOn as 0 | 1 });
   const calendarDays = eachDayOfInterval({ start: calendarGridStart, end: calendarGridEnd });
+
+  // Group days into strict 7-day weeks for reliable grid layout
+  const calendarWeeks: Date[][] = [];
+  for (let i = 0; i < calendarDays.length; i += 7) {
+    calendarWeeks.push(calendarDays.slice(i, i + 7));
+  }
+
+  // Weekday header labels matching weekStartsOn
+  const weekDayHeaders = weekStartsOn === 0
+    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   // Monthly statistics
   let monthP = 0;
@@ -296,8 +315,8 @@ export function WorkerProfileScreen({ route, navigation }: any) {
           <View style={{ width: spacing[3] }} />
           <StatCard
             value={netPayDisplay}
-            label="Net Payable"
-            accentColor={colors.success[600]}
+            label={netPayLabel}
+            accentColor={isFullySettledWeekly ? (isDark ? themeColors.textMuted : colors.neutral[500]) : colors.success[600]}
           />
         </View>
       </View>
@@ -404,7 +423,7 @@ export function WorkerProfileScreen({ route, navigation }: any) {
 
         {/* Days of Week Header */}
         <View style={styles.calendarWeekRow}>
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dayInitial) => (
+          {weekDayHeaders.map((dayInitial) => (
             <Text key={dayInitial} style={[styles.calendarWeekHeader, isDark && { color: themeColors.textMuted }]}>
               {dayInitial}
             </Text>
@@ -416,46 +435,50 @@ export function WorkerProfileScreen({ route, navigation }: any) {
           <ActivityIndicator size="small" color={colors.primary[500]} style={{ marginVertical: 20 }} />
         ) : (
           <View style={styles.calendarGrid}>
-            {calendarDays.map((d) => {
-              const dateKey = format(d, 'yyyy-MM-dd');
-              const inMonth = isSameMonth(d, calendarMonth);
-              const rec = monthlyAttendance[dateKey];
-              const isToday = isSameDay(d, new Date());
+            {calendarWeeks.map((week, wIdx) => (
+              <View key={wIdx} style={styles.calendarWeekRow}>
+                {week.map((d) => {
+                  const dateKey = format(d, 'yyyy-MM-dd');
+                  const inMonth = isSameMonth(d, calendarMonth);
+                  const rec = monthlyAttendance[dateKey];
+                  const isToday = isSameDay(d, new Date());
 
-              let dotColor: string | null = null;
-              if (rec) {
-                if (rec.status === 'present') dotColor = isDark ? '#4ADE80' : colors.success[500];
-                else if (rec.status === 'half_day') dotColor = isDark ? '#FBBF24' : colors.warning[500];
-                else if (rec.status === 'absent') dotColor = isDark ? '#F87171' : colors.danger[500];
-                else if (rec.status === 'holiday') dotColor = isDark ? '#60A5FA' : colors.primary[500];
-                else if (rec.status === 'leave') dotColor = isDark ? themeColors.textMuted : colors.neutral[500];
-              }
+                  let dotColor: string | null = null;
+                  if (rec) {
+                    if (rec.status === 'present') dotColor = isDark ? '#4ADE80' : colors.success[500];
+                    else if (rec.status === 'half_day') dotColor = isDark ? '#FBBF24' : colors.warning[500];
+                    else if (rec.status === 'absent') dotColor = isDark ? '#F87171' : colors.danger[500];
+                    else if (rec.status === 'holiday') dotColor = isDark ? '#60A5FA' : colors.primary[500];
+                    else if (rec.status === 'leave') dotColor = isDark ? themeColors.textMuted : colors.neutral[500];
+                  }
 
-              return (
-                <View
-                  key={dateKey}
-                  style={[
-                    styles.calendarDayCell,
-                    isToday && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderWidth: 1, borderColor: colors.primary[500] } : styles.todayCell),
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.calendarDayNum,
-                      isDark && { color: themeColors.text },
-                      !inMonth && (isDark ? { color: themeColors.textMuted, opacity: 0.3 } : styles.dayNumDimmed),
-                      isToday && (isDark ? { color: '#60A5FA' } : styles.todayNumText),
-                    ]}
-                  >
-                    {format(d, 'd')}
-                  </Text>
-                  {inMonth && dotColor && (
-                    <View style={[styles.statusDot, { backgroundColor: dotColor }]} />
-                  )}
-                  {inMonth && !dotColor && <View style={styles.emptyDot} />}
-                </View>
-              );
-            })}
+                  return (
+                    <View
+                      key={dateKey}
+                      style={[
+                        styles.calendarDayCell,
+                        isToday && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderWidth: 1, borderColor: colors.primary[500] } : styles.todayCell),
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.calendarDayNum,
+                          isDark && { color: themeColors.text },
+                          !inMonth && (isDark ? { color: themeColors.textMuted, opacity: 0.3 } : styles.dayNumDimmed),
+                          isToday && (isDark ? { color: '#60A5FA' } : styles.todayNumText),
+                        ]}
+                      >
+                        {format(d, 'd')}
+                      </Text>
+                      {inMonth && dotColor && (
+                        <View style={[styles.statusDot, { backgroundColor: dotColor }]} />
+                      )}
+                      {inMonth && !dotColor && <View style={styles.emptyDot} />}
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
           </View>
         )}
       </Card>
@@ -766,26 +789,25 @@ const styles = StyleSheet.create({
   },
   calendarWeekRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 6,
+    alignItems: 'center',
+    marginBottom: 4,
   },
   calendarWeekHeader: {
-    width: 38,
+    flex: 1,
     textAlign: 'center',
     fontSize: 11,
     fontWeight: '700',
     color: colors.neutral[400],
   },
   calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
+    width: '100%',
   },
   calendarDayCell: {
-    width: 38,
-    height: 42,
+    flex: 1,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: 1,
     marginVertical: 2,
     borderRadius: 6,
   },

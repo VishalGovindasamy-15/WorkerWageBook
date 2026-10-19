@@ -2,13 +2,15 @@
 
 import React from 'react';
 import { Platform } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/theme';
 import { useAppStore } from '../stores/appStore';
+
+export const navigationRef = createNavigationContainerRef();
 
 // Screens (barrel import)
 import {
@@ -260,7 +262,7 @@ export function AppNavigator() {
   const bottomInset = Math.max(insets.bottom, Platform.OS === 'web' ? 6 : 8);
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       <Tab.Navigator
         backBehavior="firstRoute"
         screenOptions={({ route }) => ({
