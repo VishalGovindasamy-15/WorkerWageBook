@@ -31,6 +31,7 @@ You can download and install the standalone preview APK directly on any Android 
 
 - **Direct APK Download**: [⬇️ Download Worker WageBook v1.0.0 APK](https://expo.dev/artifacts/eas/jMvl-fJoQ7g2plC2UIaEs3pzuvOv4Z8B_yDmldYIkqE.apk)
 - **EAS Cloud Build Logs**: [🔗 View EAS Build #b77cd3ec](https://expo.dev/accounts/world_dominator/projects/worker-wagebook/builds/b77cd3ec-da9e-4edf-b449-2ca3926879ce)
+- **Comprehensive User Guide**: [📘 Read the Step-by-Step User Guide (with Screenshots)](./USER_GUIDE.md)
 
 ### Installation Instructions
 1. Download the  file using the link above on your Android phone.
