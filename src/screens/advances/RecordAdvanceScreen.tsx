@@ -1,6 +1,4 @@
-// Worker WageBook - Record Advance Screen
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { colors, spacing, typography } from '../../constants/theme';
 import { TextInput, Button, Card } from '../../components/ui';
@@ -19,7 +18,7 @@ import { advanceService } from '../../services/advanceService';
 import { useAppStore } from '../../stores/appStore';
 import { formatCurrency } from '../../utils/helpers';
 
-export function RecordAdvanceScreen({ navigation }: any) {
+export function RecordAdvanceScreen({ navigation, route }: any) {
   const { showToast, isDark, themeColors } = useAppStore();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
@@ -32,19 +31,29 @@ export function RecordAdvanceScreen({ navigation }: any) {
   const [outstandingBalance, setOutstandingBalance] = useState(0);
   const [workerSearchQuery, setWorkerSearchQuery] = useState('');
 
-  useEffect(() => {
-    loadWorkers();
-  }, []);
-
-  useEffect(() => {
-    if (selectedWorkerId) {
-      loadOutstandingBalance();
-    }
-  }, [selectedWorkerId]);
-
   const loadWorkers = async () => {
-    const workerList = await workerService.getAll({ is_active: 1, sort_by: 'name' });
-    setWorkers(workerList);
+    try {
+      const workerList = await workerService.getAll({ is_active: 1, sort_by: 'name' });
+      setWorkers(workerList);
+    } catch (err) {
+      console.error('Failed to load workers for advance:', err);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadWorkers();
+      if (route?.params?.workerId) {
+        setSelectedWorkerId(route.params.workerId);
+      }
+    }, [route?.params?.workerId])
+  );
+
+  const handleToggleWorkerPicker = async () => {
+    if (!showWorkerPicker) {
+      await loadWorkers();
+    }
+    setShowWorkerPicker((prev) => !prev);
   };
 
   const loadOutstandingBalance = async () => {
@@ -57,11 +66,11 @@ export function RecordAdvanceScreen({ navigation }: any) {
 
   const filteredWorkers = workers.filter((w) => {
     if (!workerSearchQuery.trim()) return true;
-    const q = workerSearchQuery.toLowerCase();
-    return (
-      w.name.toLowerCase().includes(q) ||
-      w.employee_id.toLowerCase().includes(q)
-    );
+    const q = workerSearchQuery.trim().toLowerCase();
+    const nameMatch = (w.name || '').toLowerCase().includes(q);
+    const idMatch = (w.employee_id || '').toLowerCase().includes(q);
+    const phoneMatch = (w.phone || '').toLowerCase().includes(q);
+    return nameMatch || idMatch || phoneMatch;
   });
 
   const handleSave = async () => {
@@ -108,7 +117,7 @@ export function RecordAdvanceScreen({ navigation }: any) {
               borderColor: themeColors.inputBorder,
             },
           ]}
-          onPress={() => setShowWorkerPicker(!showWorkerPicker)}
+          onPress={handleToggleWorkerPicker}
         >
           <View style={styles.pickerContent}>
             <Ionicons
@@ -163,11 +172,34 @@ export function RecordAdvanceScreen({ navigation }: any) {
               nestedScrollEnabled={true}
               keyboardShouldPersistTaps="handled"
             >
-              {filteredWorkers.length === 0 ? (
+              {workers.length === 0 ? (
+                <View style={{ padding: spacing[4], alignItems: 'center' }}>
+                  <Ionicons name="people-outline" size={32} color={isDark ? themeColors.textMuted : colors.neutral[400]} style={{ marginBottom: 8 }} />
+                  <Text style={[styles.emptySearchText, { marginBottom: 12 }, isDark && { color: themeColors.textMuted }]}>
+                    No active workers found in database
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.addWorkerButton}
+                    onPress={() => {
+                      setShowWorkerPicker(false);
+                      navigation.navigate('WorkersTab', { screen: 'AddWorker' });
+                    }}
+                  >
+                    <Ionicons name="person-add-outline" size={16} color={colors.white} style={{ marginRight: 6 }} />
+                    <Text style={styles.addWorkerButtonText}>Add New Worker</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : filteredWorkers.length === 0 ? (
                 <View style={{ padding: spacing[4], alignItems: 'center' }}>
                   <Text style={[styles.emptySearchText, isDark && { color: themeColors.textMuted }]}>
                     No workers match "{workerSearchQuery}"
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => setWorkerSearchQuery('')}
+                    style={{ marginTop: 8 }}
+                  >
+                    <Text style={{ color: colors.primary[600], fontWeight: '600', fontSize: 13 }}>Clear Search</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 filteredWorkers.map((worker) => (
@@ -440,5 +472,18 @@ const styles = StyleSheet.create({
   paymentMethodTextActive: {
     color: colors.primary[700],
     fontWeight: '600',
+  },
+  addWorkerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary[600],
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[4],
+    borderRadius: 8,
+  },
+  addWorkerButtonText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 13,
   },
 });

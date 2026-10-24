@@ -47,8 +47,8 @@ export const workerService = {
 
     const result = await runAsync(
       `INSERT INTO workers (employee_id, name, phone, photo_uri, category_id, 
-        daily_wage, overtime_rate, overtime_type, joining_date, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        daily_wage, overtime_rate, overtime_type, is_active, joining_date, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
       [
         employeeId,
         data.name,
@@ -233,8 +233,11 @@ export const workerService = {
     }
 
     if (filters?.is_active !== undefined) {
-      sql += ' AND is_active = ?';
-      params.push(filters.is_active);
+      if (filters.is_active === 1) {
+        sql += ' AND (is_active = 1 OR is_active IS NULL)';
+      } else {
+        sql += ' AND is_active = 0';
+      }
     }
 
     const sortBy = filters?.sort_by || 'name';

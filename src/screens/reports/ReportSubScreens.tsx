@@ -1,8 +1,9 @@
 // Worker WageBook - Report Sub-Screens
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Share, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { colors, spacing, typography, shadows, borderRadius } from '../../constants/theme';
 import { Card, Button, Badge, Avatar } from '../../components/ui';
@@ -29,9 +30,11 @@ export function WeeklyReportScreen({ navigation }: any) {
   const [workers, setWorkers] = useState<Record<number, Worker>>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadReport();
-  }, [currentWeek]);
+  useFocusEffect(
+    useCallback(() => {
+      loadReport();
+    }, [currentWeek])
+  );
 
   const loadReport = async () => {
     setLoading(true);
@@ -268,9 +271,11 @@ export function AttendanceReportScreen() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    loadReport();
-  }, [currentWeek]);
+  useFocusEffect(
+    useCallback(() => {
+      loadReport();
+    }, [currentWeek])
+  );
 
   const loadReport = async () => {
     setLoading(true);
@@ -433,9 +438,11 @@ export function AdvancesReportScreen() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    loadReport();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadReport();
+    }, [])
+  );
 
   const loadReport = async () => {
     setLoading(true);
@@ -577,9 +584,11 @@ export function AdvancesGivenReportScreen() {
     }
   };
 
-  useEffect(() => {
-    loadReport();
-  }, [filterPeriod]);
+  useFocusEffect(
+    useCallback(() => {
+      loadReport();
+    }, [filterPeriod])
+  );
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -736,9 +745,11 @@ export function CashbookScreen() {
   const [workers, setWorkers] = useState<Record<number, Worker>>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadReport();
-  }, [currentWeek]);
+  useFocusEffect(
+    useCallback(() => {
+      loadReport();
+    }, [currentWeek])
+  );
 
   const loadReport = async () => {
     setLoading(true);
@@ -899,9 +910,11 @@ export function WorkerSummaryReportScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const loadData = async () => {
     setLoading(true);
