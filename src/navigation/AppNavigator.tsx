@@ -227,6 +227,14 @@ const TAB_ICONS: Record<string, { focused: keyof typeof Ionicons.glyphMap; unfoc
   ReportsTab: { focused: 'bar-chart', unfocused: 'bar-chart-outline' },
 };
 
+const TAB_ROOT_SCREENS: Record<string, string> = {
+  HomeTab: 'Home',
+  WorkersTab: 'WorkersList',
+  AttendanceTab: 'AttendanceList',
+  SalaryTab: 'WeeklySalary',
+  ReportsTab: 'ReportsList',
+};
+
 export function AppNavigator() {
   const { isUnlocked, isDark, themeColors } = useAppStore();
   const insets = useSafeAreaInsets();
@@ -271,6 +279,18 @@ export function AppNavigator() {
     <NavigationContainer ref={navigationRef} theme={navTheme}>
       <Tab.Navigator
         backBehavior="firstRoute"
+        screenListeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const rootScreen = TAB_ROOT_SCREENS[route.name];
+            if (rootScreen) {
+              e.preventDefault();
+              navigation.navigate(route.name, {
+                screen: rootScreen,
+                pop: true,
+              });
+            }
+          },
+        })}
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarIcon: ({ focused, color, size }) => {

@@ -27,6 +27,75 @@ export interface BackupData {
   settings: any[];
 }
 
+// Helper for web file picking with cancel detection
+function pickWebJsonFile(): Promise<File | null> {
+  return new Promise((resolve) => {
+    if (typeof document === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    let settled = false;
+
+    const cleanup = () => {
+      settled = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', onWindowFocus);
+      }
+      input.removeEventListener('cancel', onCancel);
+    };
+
+    const finish = (file: File | null) => {
+      if (settled) return;
+      cleanup();
+      resolve(file);
+    };
+
+    const onCancel = () => {
+      finish(null);
+    };
+
+    const onWindowFocus = () => {
+      // When the native file dialog is dismissed, window regains focus.
+      // Give change event 400ms to fire if user selected a file.
+      setTimeout(() => {
+        if (!settled) {
+          if (!input.files || input.files.length === 0) {
+            finish(null);
+          }
+        }
+      }, 400);
+    };
+
+    input.addEventListener('cancel', onCancel);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', onWindowFocus);
+    }
+
+    input.onchange = (e: any) => {
+      const file = e.target?.files?.[0] || null;
+      finish(file);
+    };
+
+    input.click();
+  });
+}
+
+function readWebFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      resolve((evt.target?.result as string) || '');
+    };
+    reader.onerror = () => {
+      reject(new Error('Failed to read file'));
+    };
+    reader.readAsText(file);
+  });
+}
+
 export const backupService = {
   // Export all database tables into a JSON backup
   async exportBackup(): Promise<string> {
@@ -221,33 +290,19 @@ export const backupService = {
   // Open file picker to restore on Native or Web
   async pickAndRestoreFile(): Promise<{ success: boolean; message: string }> {
     if (Platform.OS === 'web') {
-      return new Promise((resolve) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json,application/json';
-        input.onchange = async (e: any) => {
-          const file = e.target.files?.[0];
-          if (!file) {
-            resolve({ success: false, message: 'No file selected' });
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = async (evt) => {
-            const content = evt.target?.result as string;
-            if (!content) {
-              resolve({ success: false, message: 'File is empty' });
-              return;
-            }
-            const res = await backupService.restoreBackupFromJson(content);
-            resolve(res);
-          };
-          reader.onerror = () => {
-            resolve({ success: false, message: 'Failed to read backup file' });
-          };
-          reader.readAsText(file);
-        };
-        input.click();
-      });
+      try {
+        const file = await pickWebJsonFile();
+        if (!file) {
+          return { success: false, message: 'Restore cancelled' };
+        }
+        const content = await readWebFileAsText(file);
+        if (!content) {
+          return { success: false, message: 'File is empty' };
+        }
+        return await backupService.restoreBackupFromJson(content);
+      } catch (err: any) {
+        return { success: false, message: err.message || 'Failed to read backup file' };
+      }
     }
 
     try {
@@ -395,33 +450,19 @@ export const backupService = {
   // Pick and import workers JSON file
   async pickAndImportWorkersJson(): Promise<{ success: number; failed: number; skipped: number; errors: string[] }> {
     if (Platform.OS === 'web') {
-      return new Promise((resolve) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json,application/json';
-        input.onchange = async (e: any) => {
-          const file = e.target.files?.[0];
-          if (!file) {
-            resolve({ success: 0, failed: 0, skipped: 0, errors: ['No file selected'] });
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = async (evt) => {
-            const content = evt.target?.result as string;
-            if (!content) {
-              resolve({ success: 0, failed: 0, skipped: 0, errors: ['File is empty'] });
-              return;
-            }
-            const res = await backupService.importWorkersFromJson(content);
-            resolve(res);
-          };
-          reader.onerror = () => {
-            resolve({ success: 0, failed: 0, skipped: 0, errors: ['Failed to read JSON file'] });
-          };
-          reader.readAsText(file);
-        };
-        input.click();
-      });
+      try {
+        const file = await pickWebJsonFile();
+        if (!file) {
+          return { success: 0, failed: 0, skipped: 0, errors: ['Import cancelled'] };
+        }
+        const content = await readWebFileAsText(file);
+        if (!content) {
+          return { success: 0, failed: 0, skipped: 0, errors: ['File is empty'] };
+        }
+        return await backupService.importWorkersFromJson(content);
+      } catch (err: any) {
+        return { success: 0, failed: 0, skipped: 0, errors: [err.message || 'Failed to read JSON file'] };
+      }
     }
 
     try {
