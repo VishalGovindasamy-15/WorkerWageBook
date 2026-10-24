@@ -24,6 +24,7 @@ export {
   WeeklyReportScreen,
   AttendanceReportScreen,
   AdvancesReportScreen,
+  AdvancesGivenReportScreen,
   CashbookScreen,
   WorkerSummaryReportScreen,
   WeeklyAuditReportScreen,

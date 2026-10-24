@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Platform,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -95,42 +96,95 @@ export function AttendanceScreen({ navigation }: any) {
     loadData();
   };
 
+  const statusLabels: Record<AttendanceStatus, string> = {
+    present: 'Present',
+    half_day: 'Half Day',
+    absent: 'Absent',
+    holiday: 'Holiday',
+    leave: 'Leave',
+  };
+
   // Auto-save single worker on tapping status (P, H, A, HOL, L)
   const handleStatusSelect = async (workerId: number, status: AttendanceStatus) => {
-    const nowIso = new Date().toISOString();
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
     const workerItem = workers.find((w) => w.worker.id === workerId);
-    const leaveType = status === 'leave' ? (workerItem?.leave_type || 'unpaid') : undefined;
+    if (!workerItem) return;
 
-    // 1. Immediately update UI state with status & current local timestamp
-    setWorkers((prev) =>
-      prev.map((w) =>
-        w.worker.id === workerId
-          ? {
-              ...w,
-              status,
-              leave_type: leaveType,
-              marked_at: nowIso,
-            }
-          : w
-      )
-    );
+    // If the status is already what's selected, nothing to change
+    if (workerItem.status === status) return;
 
-    // 2. Auto-save instantly to database
-    try {
-      await attendanceService.mark({
-        worker_id: workerId,
-        work_date: dateStr,
-        status,
-        leave_type: leaveType,
-        overtime_hours: workerItem?.overtime_hours ? parseFloat(workerItem.overtime_hours) : 0,
-        overtime_amount: workerItem?.overtime_amount ? parseFloat(workerItem.overtime_amount) : 0,
-        overtime_amount_type: workerItem?.overtime_type || 'calculated',
-      });
-    } catch (err: any) {
-      console.error('Failed to auto-save attendance:', err);
-      showToast('Failed to save attendance', 'error');
+    const performSave = async () => {
+      const nowIso = new Date().toISOString();
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const leaveType = status === 'leave' ? (workerItem?.leave_type || 'unpaid') : undefined;
+
+      // 1. Immediately update UI state with status & current local timestamp
+      setWorkers((prev) =>
+        prev.map((w) =>
+          w.worker.id === workerId
+            ? {
+                ...w,
+                status,
+                leave_type: leaveType,
+                marked_at: nowIso,
+              }
+            : w
+        )
+      );
+
+      // 2. Auto-save instantly to database
+      try {
+        await attendanceService.mark({
+          worker_id: workerId,
+          work_date: dateStr,
+          status,
+          leave_type: leaveType,
+          overtime_hours: workerItem?.overtime_hours ? parseFloat(workerItem.overtime_hours) : 0,
+          overtime_amount: workerItem?.overtime_amount ? parseFloat(workerItem.overtime_amount) : 0,
+          overtime_amount_type: workerItem?.overtime_type || 'calculated',
+        });
+        showToast(`Attendance updated for ${workerItem.worker.name}`, 'success');
+      } catch (err: any) {
+        console.error('Failed to auto-save attendance:', err);
+        showToast('Failed to save attendance', 'error');
+      }
+    };
+
+    // If attendance is already marked and being changed, ask for confirmation
+    if (workerItem.status) {
+      const currentName = statusLabels[workerItem.status] || workerItem.status;
+      const newName = statusLabels[status] || status;
+      const message = `Attendance for ${workerItem.worker.name} is already marked as ${currentName}. Do you want to update it to ${newName}?`;
+
+      if (Platform.OS === 'web') {
+        if (typeof window !== 'undefined' && window.confirm) {
+          if (window.confirm(message)) {
+            await performSave();
+          }
+        } else {
+          await performSave();
+        }
+      } else {
+        Alert.alert(
+          'Update Attendance?',
+          message,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Update',
+              style: 'default',
+              onPress: () => {
+                performSave();
+              },
+            },
+          ],
+          { cancelable: true }
+        );
+      }
+      return;
     }
+
+    // First time marking for today: save directly
+    await performSave();
   };
 
   // Auto-save when overtime or leave details change
@@ -171,33 +225,69 @@ export function AttendanceScreen({ navigation }: any) {
 
   // Bulk mark all active workers and auto-save
   const markAllAs = async (status: AttendanceStatus) => {
-    const nowIso = new Date().toISOString();
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const performBulk = async () => {
+      const nowIso = new Date().toISOString();
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-    setWorkers((prev) =>
-      prev.map((w) => ({
-        ...w,
-        status: w.worker.is_active ? status : w.status,
-        marked_at: w.worker.is_active ? nowIso : w.marked_at,
-      }))
-    );
-
-    try {
-      const activeWorkers = workers.filter((w) => w.worker.is_active);
-      await attendanceService.markBulk(
-        dateStr,
-        activeWorkers.map((w) => ({
-          worker_id: w.worker.id,
-          status,
-          overtime_hours: w.overtime_hours ? parseFloat(w.overtime_hours) : 0,
-          overtime_amount: w.overtime_amount ? parseFloat(w.overtime_amount) : 0,
-          overtime_amount_type: w.overtime_type,
+      setWorkers((prev) =>
+        prev.map((w) => ({
+          ...w,
+          status: w.worker.is_active ? status : w.status,
+          marked_at: w.worker.is_active ? nowIso : w.marked_at,
         }))
       );
-      showToast(`Marked all as ${status}`, 'success');
-    } catch (err: any) {
-      console.error('Failed to auto-save bulk attendance:', err);
+
+      try {
+        const activeWorkers = workers.filter((w) => w.worker.is_active);
+        await attendanceService.markBulk(
+          dateStr,
+          activeWorkers.map((w) => ({
+            worker_id: w.worker.id,
+            status,
+            overtime_hours: w.overtime_hours ? parseFloat(w.overtime_hours) : 0,
+            overtime_amount: w.overtime_amount ? parseFloat(w.overtime_amount) : 0,
+            overtime_amount_type: w.overtime_type,
+          }))
+        );
+        showToast(`Marked all as ${statusLabels[status]}`, 'success');
+      } catch (err: any) {
+        console.error('Failed to auto-save bulk attendance:', err);
+        showToast('Failed to mark all attendance', 'error');
+      }
+    };
+
+    const alreadyMarkedCount = workers.filter((w) => w.worker.is_active && w.status).length;
+    if (alreadyMarkedCount > 0) {
+      const message = `${alreadyMarkedCount} worker(s) already have attendance marked. Do you want to update all to ${statusLabels[status]}?`;
+      if (Platform.OS === 'web') {
+        if (typeof window !== 'undefined' && window.confirm) {
+          if (window.confirm(message)) {
+            await performBulk();
+          }
+        } else {
+          await performBulk();
+        }
+      } else {
+        Alert.alert(
+          'Update All Attendance?',
+          message,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Update',
+              style: 'default',
+              onPress: () => {
+                performBulk();
+              },
+            },
+          ],
+          { cancelable: true }
+        );
+      }
+      return;
     }
+
+    await performBulk();
   };
 
   const changeDate = (days: number) => {

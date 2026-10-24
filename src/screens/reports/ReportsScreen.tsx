@@ -42,6 +42,13 @@ export function ReportsScreen({ navigation }: any) {
       color: colors.warning[500],
     },
     {
+      id: 'advances-given',
+      title: 'Advances Given Report',
+      description: 'Log of all advances disbursed with PDF export',
+      icon: 'receipt-outline',
+      color: colors.warning[600],
+    },
+    {
       id: 'cashbook',
       title: 'Cashbook',
       description: 'All cash transactions',
@@ -74,6 +81,9 @@ export function ReportsScreen({ navigation }: any) {
         break;
       case 'outstanding-advances':
         navigation.navigate('AdvancesReport');
+        break;
+      case 'advances-given':
+        navigation.navigate('AdvancesGivenReport');
         break;
       case 'cashbook':
         navigation.navigate('CashbookReport');

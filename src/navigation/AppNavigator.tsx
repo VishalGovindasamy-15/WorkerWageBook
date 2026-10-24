@@ -26,6 +26,7 @@ import {
   WeeklyReportScreen,
   AttendanceReportScreen,
   AdvancesReportScreen,
+  AdvancesGivenReportScreen,
   CashbookScreen,
   WorkerSummaryReportScreen,
   WeeklyAuditReportScreen,
@@ -140,6 +141,11 @@ function ReportsStackNavigator() {
         name="AdvancesReport" 
         component={AdvancesReportScreen} 
         options={{ title: 'Outstanding Advances' }} 
+      />
+      <ReportsStack.Screen 
+        name="AdvancesGivenReport" 
+        component={AdvancesGivenReportScreen} 
+        options={{ title: 'Advances Given Report' }} 
       />
       <ReportsStack.Screen 
         name="CashbookReport" 

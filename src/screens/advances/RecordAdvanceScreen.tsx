@@ -30,6 +30,7 @@ export function RecordAdvanceScreen({ navigation }: any) {
   const [saving, setSaving] = useState(false);
   const [showWorkerPicker, setShowWorkerPicker] = useState(false);
   const [outstandingBalance, setOutstandingBalance] = useState(0);
+  const [workerSearchQuery, setWorkerSearchQuery] = useState('');
 
   useEffect(() => {
     loadWorkers();
@@ -53,6 +54,15 @@ export function RecordAdvanceScreen({ navigation }: any) {
   };
 
   const selectedWorker = workers.find((w) => w.id === selectedWorkerId);
+
+  const filteredWorkers = workers.filter((w) => {
+    if (!workerSearchQuery.trim()) return true;
+    const q = workerSearchQuery.toLowerCase();
+    return (
+      w.name.toLowerCase().includes(q) ||
+      w.employee_id.toLowerCase().includes(q)
+    );
+  });
 
   const handleSave = async () => {
     if (!selectedWorkerId) {
@@ -130,30 +140,60 @@ export function RecordAdvanceScreen({ navigation }: any) {
         </TouchableOpacity>
 
         {showWorkerPicker && (
-          <Card style={[styles.workerDropdown, isDark && { borderColor: themeColors.cardBorder }]} padding={0}>
-            <ScrollView style={{ maxHeight: 200 }}>
-              {workers.map((worker) => (
-                <TouchableOpacity
-                  key={worker.id}
-                  style={[
-                    styles.workerOption,
-                    isDark && { borderBottomColor: themeColors.border },
-                    selectedWorkerId === worker.id && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.15)' } : styles.workerOptionSelected),
-                  ]}
-                  onPress={() => {
-                    setSelectedWorkerId(worker.id);
-                    setShowWorkerPicker(false);
-                  }}
-                >
-                  <View>
-                    <Text style={[styles.workerOptionName, isDark && { color: themeColors.text }]}>{worker.name}</Text>
-                    <Text style={[styles.workerOptionId, isDark && { color: themeColors.textMuted }]}>{worker.employee_id}</Text>
-                  </View>
-                  {selectedWorkerId === worker.id && (
-                    <Ionicons name="checkmark" size={20} color={isDark ? '#60A5FA' : colors.primary[600]} />
-                  )}
+          <Card style={[styles.workerDropdown, isDark && { borderColor: themeColors.cardBorder, backgroundColor: themeColors.card }]} padding={0}>
+            {/* Search Bar for Worker Selection */}
+            <View style={[styles.searchBarBox, isDark && { backgroundColor: themeColors.surface, borderBottomColor: themeColors.border }]}>
+              <Ionicons name="search" size={18} color={isDark ? themeColors.textMuted : colors.neutral[400]} style={{ marginRight: 8 }} />
+              <TextInput
+                placeholder="Search worker by name or ID..."
+                value={workerSearchQuery}
+                onChangeText={setWorkerSearchQuery}
+                containerStyle={{ flex: 1, marginBottom: 0 }}
+                style={{ borderWidth: 0, paddingHorizontal: 0, height: 40 }}
+              />
+              {workerSearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setWorkerSearchQuery('')} style={{ padding: 4 }}>
+                  <Ionicons name="close-circle" size={18} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
                 </TouchableOpacity>
-              ))}
+              )}
+            </View>
+
+            <ScrollView
+              style={{ maxHeight: 220 }}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+            >
+              {filteredWorkers.length === 0 ? (
+                <View style={{ padding: spacing[4], alignItems: 'center' }}>
+                  <Text style={[styles.emptySearchText, isDark && { color: themeColors.textMuted }]}>
+                    No workers match "{workerSearchQuery}"
+                  </Text>
+                </View>
+              ) : (
+                filteredWorkers.map((worker) => (
+                  <TouchableOpacity
+                    key={worker.id}
+                    style={[
+                      styles.workerOption,
+                      isDark && { borderBottomColor: themeColors.border },
+                      selectedWorkerId === worker.id && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.15)' } : styles.workerOptionSelected),
+                    ]}
+                    onPress={() => {
+                      setSelectedWorkerId(worker.id);
+                      setShowWorkerPicker(false);
+                      setWorkerSearchQuery('');
+                    }}
+                  >
+                    <View>
+                      <Text style={[styles.workerOptionName, isDark && { color: themeColors.text }]}>{worker.name}</Text>
+                      <Text style={[styles.workerOptionId, isDark && { color: themeColors.textMuted }]}>{worker.employee_id}</Text>
+                    </View>
+                    {selectedWorkerId === worker.id && (
+                      <Ionicons name="checkmark" size={20} color={isDark ? '#60A5FA' : colors.primary[600]} />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
           </Card>
         )}
@@ -314,7 +354,20 @@ const styles = StyleSheet.create({
     marginTop: spacing[2],
     borderWidth: 1,
     borderColor: colors.neutral[200],
-    maxHeight: 250,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  searchBarBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral[200],
+    backgroundColor: colors.neutral[50],
+  },
+  emptySearchText: {
+    ...typography.caption,
+    color: colors.neutral[500],
   },
   workerOption: {
     flexDirection: 'row',

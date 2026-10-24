@@ -150,6 +150,57 @@ export const advanceService = {
     return getAllAsync<Advance>(sql, params);
   },
 
+  // Get all advances with worker details joined
+  async getAllWithWorkers(filters?: {
+    worker_id?: number;
+    category_id?: number;
+    payment_method?: string;
+    date_from?: string;
+    date_to?: string;
+    include_reversed?: boolean;
+  }): Promise<(Advance & { worker_name: string; employee_id: string; worker_phone: string | null })[]> {
+    let sql = `
+      SELECT a.*, w.name as worker_name, w.employee_id, w.phone as worker_phone
+      FROM advances a
+      INNER JOIN workers w ON a.worker_id = w.id
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (!filters?.include_reversed) {
+      sql += ' AND a.is_reversed = 0';
+    }
+
+    if (filters?.worker_id) {
+      sql += ' AND a.worker_id = ?';
+      params.push(filters.worker_id);
+    }
+
+    if (filters?.category_id) {
+      sql += ' AND w.category_id = ?';
+      params.push(filters.category_id);
+    }
+
+    if (filters?.payment_method) {
+      sql += ' AND a.payment_method = ?';
+      params.push(filters.payment_method);
+    }
+
+    if (filters?.date_from) {
+      sql += ' AND a.advance_date >= ?';
+      params.push(filters.date_from);
+    }
+
+    if (filters?.date_to) {
+      sql += ' AND a.advance_date <= ?';
+      params.push(filters.date_to);
+    }
+
+    sql += ' ORDER BY a.advance_date DESC, a.created_at DESC';
+
+    return getAllAsync<Advance & { worker_name: string; employee_id: string; worker_phone: string | null }>(sql, params);
+  },
+
   // Get outstanding advance balance for a worker
   async getOutstandingBalance(workerId: number): Promise<number> {
     const result = await getFirstAsync<{ balance: number }>(

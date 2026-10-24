@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
-import { SalarySettlement, SettlementItem, Worker, Attendance, AuditLog } from '../types';
+import { SalarySettlement, SettlementItem, Worker, Attendance, AuditLog, Advance } from '../types';
 import { SalaryCalculation } from './salaryService';
 import { attendanceService } from './attendanceService';
 import { formatCurrency } from '../utils/helpers';
@@ -691,6 +691,234 @@ export const pdfService = {
     `;
 
     await this.generateAndSharePDF(html, `Outstanding_Advances_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  },
+
+  // 3b. Generate and share Advances Given / Disbursed Report PDF
+  async generateAdvancesGivenReport(
+    advances: (Advance & { worker_name: string; employee_id: string; worker_phone?: string | null })[],
+    dateRange: { start?: string; end?: string; label?: string },
+    businessName: string
+  ): Promise<void> {
+    const totalGiven = advances.reduce((sum, a) => sum + a.amount, 0);
+    const uniqueWorkers = new Set(advances.map((a) => a.worker_id)).size;
+    const printTime = format(new Date(), 'dd MMM yyyy, h:mm a');
+    const rangeLabel =
+      dateRange.label ||
+      (dateRange.start && dateRange.end
+        ? `${format(parseISO(dateRange.start), 'dd MMM yyyy')} to ${format(parseISO(dateRange.end), 'dd MMM yyyy')}`
+        : 'All Records');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Advances Disbursed Report - ${businessName}</title>
+          <style>
+            @page { size: portrait; margin: 12mm; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+              color: #0f172a;
+              margin: 0;
+              padding: 16px;
+              font-size: 11px;
+            }
+            .header-table {
+              width: 100%;
+              border-bottom: 2px solid #d97706;
+              padding-bottom: 8px;
+              margin-bottom: 14px;
+            }
+            .biz-title {
+              font-size: 22px;
+              font-weight: 800;
+              color: #92400e;
+            }
+            .report-title {
+              font-size: 14px;
+              font-weight: 700;
+              color: #334155;
+              text-transform: uppercase;
+              margin-top: 4px;
+            }
+            .summary-box {
+              background: #fffbeb;
+              border: 1px solid #fde68a;
+              border-radius: 8px;
+              padding: 12px 16px;
+              margin-bottom: 16px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .summary-item { text-align: left; }
+            .summary-label { font-size: 10px; color: #92400e; text-transform: uppercase; font-weight: 700; }
+            .summary-value { font-size: 20px; font-weight: 800; color: #b45309; }
+            .table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+            }
+            .table th {
+              background: #fef3c7;
+              color: #92400e;
+              font-weight: 700;
+              padding: 8px 8px;
+              border: 1px solid #fde68a;
+              text-align: left;
+              text-transform: uppercase;
+              font-size: 10px;
+            }
+            .table td {
+              padding: 8px 8px;
+              border: 1px solid #e2e8f0;
+            }
+            .table tr:nth-child(even) { background: #fffdf5; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .font-bold { font-weight: 700; }
+            .badge {
+              display: inline-block;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 9px;
+              font-weight: 700;
+              text-transform: uppercase;
+            }
+            .badge-cash { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+            .badge-upi { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+            .badge-bank { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+            .footer-signatures {
+              margin-top: 40px;
+              display: flex;
+              justify-content: space-between;
+              padding: 0 20px;
+            }
+            .sign-col {
+              text-align: center;
+              width: 200px;
+            }
+            .sign-line {
+              border-top: 1px dashed #64748b;
+              padding-top: 5px;
+              font-size: 11px;
+              color: #475569;
+              font-weight: 600;
+            }
+            .audit-watermark {
+              margin-top: 30px;
+              text-align: center;
+              font-size: 9px;
+              color: #94a3b8;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <table class="header-table">
+            <tr>
+              <td>
+                <div class="biz-title">${businessName}</div>
+                <div class="report-title">Advances Given (Disbursement) Report</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Period: <strong>${rangeLabel}</strong></div>
+              </td>
+              <td style="text-align: right; color: #64748b;">
+                <div><strong>Total Entries:</strong> ${advances.length}</div>
+                <div><strong>Printed:</strong> ${printTime}</div>
+              </td>
+            </tr>
+          </table>
+
+          <div class="summary-box">
+            <div class="summary-item">
+              <div class="summary-label">Total Advances Disbursed</div>
+              <div class="summary-value">${formatCurrency(totalGiven)}</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Total Transactions</div>
+              <div class="summary-value" style="font-size: 18px; color: #334155;">${advances.length}</div>
+            </div>
+            <div class="summary-item" style="text-align: right;">
+              <div class="summary-label">Beneficiary Workers</div>
+              <div class="summary-value" style="font-size: 18px; color: #334155;">${uniqueWorkers} Workers</div>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="text-center" style="width: 25px;">#</th>
+                <th style="width: 75px;">Date</th>
+                <th style="width: 65px;">Emp ID</th>
+                <th>Worker Name</th>
+                <th class="text-right" style="width: 95px;">Amount Given</th>
+                <th class="text-center" style="width: 65px;">Payment Mode</th>
+                <th>Purpose / Reason</th>
+                <th class="text-center" style="width: 90px;">Worker Sign</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                advances.length === 0
+                  ? `
+                <tr>
+                  <td colspan="8" class="text-center" style="padding: 24px; color: #64748b;">No advances recorded for this period.</td>
+                </tr>
+              `
+                  : advances
+                      .map(
+                        (a, idx) => `
+                <tr>
+                  <td class="text-center">${idx + 1}</td>
+                  <td>${format(parseISO(a.advance_date), 'dd/MM/yyyy')}</td>
+                  <td class="font-bold">${a.employee_id || '-'}</td>
+                  <td><strong>${a.worker_name}</strong></td>
+                  <td class="text-right font-bold" style="color: #b45309; font-size: 12px;">${formatCurrency(a.amount)}</td>
+                  <td class="text-center">
+                    <span class="badge ${
+                      a.payment_method === 'cash'
+                        ? 'badge-cash'
+                        : a.payment_method === 'upi'
+                        ? 'badge-upi'
+                        : 'badge-bank'
+                    }">
+                      ${a.payment_method || 'CASH'}
+                    </span>
+                  </td>
+                  <td style="color: #475569; font-size: 10px;">${a.reason || '-'}</td>
+                  <td style="height: 26px;"></td>
+                </tr>
+              `
+                      )
+                      .join('')
+              }
+              <tr style="background: #fef3c7; font-weight: bold; border-top: 2px solid #f59e0b;">
+                <td colspan="4" class="text-right font-bold">TOTAL ADVANCES GIVEN:</td>
+                <td class="text-right font-bold" style="color: #b45309; font-size: 13px;">${formatCurrency(totalGiven)}</td>
+                <td colspan="3"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="footer-signatures">
+            <div class="sign-col">
+              <div class="sign-line">Prepared By (Cashier)</div>
+            </div>
+            <div class="sign-col">
+              <div class="sign-line">Authorized Signatory / Proprietor</div>
+            </div>
+          </div>
+
+          <div class="audit-watermark">
+            Worker WageBook Payroll System · Official Advance Register · Printed on ${printTime}
+          </div>
+        </body>
+      </html>
+    `;
+
+    const fileDate = dateRange.start ? dateRange.start : format(new Date(), 'yyyy-MM-dd');
+    await this.generateAndSharePDF(html, `Advances_Given_Report_${fileDate}.pdf`);
   },
 
   // 4. Generate and share Complete Individual Worker Payslip / Wage Bill PDF

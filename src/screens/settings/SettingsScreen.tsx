@@ -18,6 +18,7 @@ import { colors, spacing, typography, shadows, borderRadius } from '../../consta
 import { Card, Button, TextInput } from '../../components/ui';
 import { settingsService } from '../../services/settingsService';
 import { csvService } from '../../services/csvService';
+import { backupService } from '../../services/backupService';
 import { factoryResetDatabase } from '../../database/database';
 import { useAppStore } from '../../stores/appStore';
 
@@ -136,86 +137,105 @@ export function SettingsScreen({ navigation }: any) {
     );
   };
 
-  const handleExportCSV = async () => {
+  const handleExportFullBackup = async () => {
     if (exporting) return;
-    const doExport = async () => {
-      setExporting(true);
-      try {
-        await csvService.exportWorkers();
-        if (Platform.OS === 'web') {
-          window.alert('Workers data exported successfully');
-        } else {
-          Alert.alert('Success', 'Workers data exported successfully');
-        }
-      } catch (error: any) {
-        if (Platform.OS === 'web') {
-          window.alert(error.message || 'Failed to export data');
-        } else {
-          Alert.alert('Error', error.message || 'Failed to export data');
-        }
-      } finally {
-        setExporting(false);
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm('This will export your worker records to a CSV spreadsheet. Continue?')) {
-        await doExport();
-      }
-      return;
+    setExporting(true);
+    try {
+      const filename = await backupService.exportBackup();
+      const msg = `Full database backup saved successfully (${filename})`;
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Backup Complete', msg);
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(error.message || 'Failed to create backup');
+      else Alert.alert('Backup Error', error.message || 'Failed to create backup');
+    } finally {
+      setExporting(false);
     }
-
-    Alert.alert(
-      'Export Data',
-      'This will export all your worker records to CSV. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Export', onPress: doExport },
-      ]
-    );
   };
 
-  const handleImportCSV = async () => {
+  const handleRestoreFullBackup = async () => {
     if (importing) return;
-    const doImport = async () => {
+    const doRestore = async () => {
       setImporting(true);
       try {
-        const result = await csvService.importWorkers();
-        if (result.success > 0) {
-          const msg = `Successfully imported ${result.success} worker(s).${result.failed > 0 ? `\nFailed: ${result.failed}` : ''}`;
-          if (Platform.OS === 'web') window.alert(msg);
-          else Alert.alert('Import Complete', msg);
-        } else if (result.failed > 0) {
-          const msg = `Failed to import ${result.failed} worker(s). ${result.errors.slice(0, 3).join('\n')}`;
-          if (Platform.OS === 'web') window.alert(msg);
-          else Alert.alert('Import Failed', msg);
-        } else {
-          if (Platform.OS === 'web') window.alert('No workers were imported from the file');
-          else Alert.alert('No Data', 'No workers were imported from the file');
+        const res = await backupService.pickAndRestoreFile();
+        if (res.success) {
+          if (Platform.OS === 'web') window.alert('Success: ' + res.message);
+          else Alert.alert('Restore Complete', res.message);
+          loadSettings();
+        } else if (res.message !== 'Restore cancelled' && res.message !== 'No file selected') {
+          if (Platform.OS === 'web') window.alert('Restore Failed: ' + res.message);
+          else Alert.alert('Restore Failed', res.message);
         }
-      } catch (error: any) {
-        if (Platform.OS === 'web') window.alert(error.message || 'Failed to import data');
-        else Alert.alert('Error', error.message || 'Failed to import data');
+      } catch (err: any) {
+        if (Platform.OS === 'web') window.alert(err.message || 'Failed to restore');
+        else Alert.alert('Error', err.message || 'Failed to restore');
       } finally {
         setImporting(false);
       }
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm('Import workers from a CSV file? Existing workers with identical Employee IDs will be skipped.')) {
-        await doImport();
+      if (window.confirm('Restoring will replace all current workers, attendance, advances, and settlements with the backup JSON file. Continue?')) {
+        await doRestore();
       }
       return;
     }
 
     Alert.alert(
-      'Import Workers',
-      'This will import workers from a CSV file. Existing workers with the same Employee ID will be skipped. Continue?',
+      'Restore Database (JSON)',
+      'Restoring will replace all current workers, attendance records, advances, and settlements with data from the selected backup file. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Import', onPress: doImport },
+        { text: 'Select JSON File', style: 'destructive', onPress: doRestore },
       ]
     );
+  };
+
+  const handleExportWorkersJSON = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const filename = await backupService.exportWorkersJson();
+      const msg = `Workers roster exported as JSON (${filename})`;
+      if (Platform.OS === 'web') window.alert(msg);
+      else Alert.alert('Export Complete', msg);
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(error.message || 'Failed to export workers');
+      else Alert.alert('Export Error', error.message || 'Failed to export workers');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportWorkersJSON = async () => {
+    if (importing) return;
+    setImporting(true);
+    try {
+      const result = await backupService.pickAndImportWorkersJson();
+      if (result.success > 0) {
+        const msg = `Successfully imported ${result.success} worker(s).${result.skipped > 0 ? `\nSkipped (already exists): ${result.skipped}` : ''}${result.failed > 0 ? `\nFailed: ${result.failed}` : ''}`;
+        if (Platform.OS === 'web') window.alert(msg);
+        else Alert.alert('Import Complete', msg);
+      } else if (result.failed > 0) {
+        const msg = `Failed to import ${result.failed} worker(s).\n${result.errors.slice(0, 3).join('\n')}`;
+        if (Platform.OS === 'web') window.alert(msg);
+        else Alert.alert('Import Failed', msg);
+      } else if (result.skipped > 0) {
+        const msg = `All ${result.skipped} worker(s) in the JSON file already exist in the database.`;
+        if (Platform.OS === 'web') window.alert(msg);
+        else Alert.alert('Already Exists', msg);
+      } else if (result.errors[0] !== 'Import cancelled' && result.errors[0] !== 'No file selected') {
+        const msg = result.errors[0] || 'No workers were imported';
+        if (Platform.OS === 'web') window.alert(msg);
+        else Alert.alert('No Data', msg);
+      }
+    } catch (error: any) {
+      if (Platform.OS === 'web') window.alert(error.message || 'Failed to import workers');
+      else Alert.alert('Error', error.message || 'Failed to import workers');
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleFactoryResetClick = async () => {
@@ -366,12 +386,24 @@ export function SettingsScreen({ navigation }: any) {
       ],
     },
     {
-      title: 'BACKUP & RESTORE',
+      title: 'BACKUP & RESTORE (JSON)',
       items: [
         {
-          label: 'Google Drive & Database Backup',
-          value: 'Active',
+          label: exporting ? 'Exporting...' : 'Backup Full Database (JSON)',
+          value: 'Export all tables',
+          icon: 'cloud-download-outline',
+          onPress: handleExportFullBackup,
+        },
+        {
+          label: importing ? 'Restoring...' : 'Restore Database from JSON',
+          value: 'Pick .json backup file',
           icon: 'cloud-upload-outline',
+          onPress: handleRestoreFullBackup,
+        },
+        {
+          label: 'Cloud & Database Details',
+          value: 'View stats',
+          icon: 'server-outline',
           onPress: () => navigation.navigate('GoogleDriveBackup'),
         },
         {
@@ -383,17 +415,17 @@ export function SettingsScreen({ navigation }: any) {
       ],
     },
     {
-      title: 'DATA MANAGEMENT',
+      title: 'WORKER DATA (JSON)',
       items: [
         {
-          label: exporting ? 'Exporting...' : 'Export Workers (CSV)',
+          label: exporting ? 'Exporting...' : 'Export Workers (JSON)',
           icon: 'download-outline',
-          onPress: handleExportCSV,
+          onPress: handleExportWorkersJSON,
         },
         {
-          label: importing ? 'Importing...' : 'Import Workers (CSV)',
+          label: importing ? 'Importing...' : 'Import Workers (JSON)',
           icon: 'cloud-upload-outline',
-          onPress: handleImportCSV,
+          onPress: handleImportWorkersJSON,
         },
       ],
     },

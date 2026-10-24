@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Share, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { colors, spacing, typography, shadows, borderRadius } from '../../constants/theme';
 import { Card, Button, Badge, Avatar } from '../../components/ui';
 import { salaryService } from '../../services/salaryService';
@@ -528,6 +528,196 @@ export function AdvancesReportScreen() {
               onPress={handleExportPDF}
               icon={exporting ? undefined : "document-text-outline"}
               disabled={exporting}
+            />
+          </View>
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// ADVANCES GIVEN REPORT (DISBURSEMENTS)
+// ============================================================
+export function AdvancesGivenReportScreen() {
+  const { isDark, themeColors, weekStartsOn } = useAppStore();
+  const [advances, setAdvances] = useState<(Advance & { worker_name: string; employee_id: string; worker_phone: string | null })[]>([]);
+  const [filterPeriod, setFilterPeriod] = useState<'all' | 'month' | 'week'>('all');
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const getDateRange = () => {
+    const today = new Date();
+    if (filterPeriod === 'week') {
+      const start = format(startOfWeek(today, { weekStartsOn: weekStartsOn as any }), 'yyyy-MM-dd');
+      const end = format(endOfWeek(today, { weekStartsOn: weekStartsOn as any }), 'yyyy-MM-dd');
+      return { start, end, label: 'Current Week' };
+    }
+    if (filterPeriod === 'month') {
+      const start = format(startOfMonth(today), 'yyyy-MM-dd');
+      const end = format(endOfMonth(today), 'yyyy-MM-dd');
+      return { start, end, label: format(today, 'MMMM yyyy') };
+    }
+    return { label: 'All Time' };
+  };
+
+  const loadReport = async () => {
+    setLoading(true);
+    try {
+      const range = getDateRange();
+      const list = await advanceService.getAllWithWorkers({
+        date_from: range.start,
+        date_to: range.end,
+      });
+      setAdvances(list);
+    } catch (error) {
+      console.error('Failed to load advances given report:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReport();
+  }, [filterPeriod]);
+
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const businessName = await settingsService.getBusinessName();
+      const range = getDateRange();
+      await pdfService.generateAdvancesGivenReport(advances, range, businessName);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to export PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const totalGiven = advances.reduce((sum, a) => sum + a.amount, 0);
+  const uniqueWorkersCount = new Set(advances.map((a) => a.worker_id)).size;
+
+  return (
+    <ScrollView style={[styles.container, isDark && { backgroundColor: themeColors.background }]}>
+      <View style={styles.content}>
+        {/* Filter Pills */}
+        <View style={styles.filterPillsContainer}>
+          <TouchableOpacity
+            style={[
+              styles.filterPill,
+              filterPeriod === 'all' && styles.filterPillActive,
+              isDark && filterPeriod !== 'all' && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+            ]}
+            onPress={() => setFilterPeriod('all')}
+          >
+            <Text style={[styles.filterPillText, filterPeriod === 'all' && styles.filterPillTextActive, isDark && filterPeriod !== 'all' && { color: themeColors.textSecondary }]}>
+              All Time
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterPill,
+              filterPeriod === 'month' && styles.filterPillActive,
+              isDark && filterPeriod !== 'month' && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+            ]}
+            onPress={() => setFilterPeriod('month')}
+          >
+            <Text style={[styles.filterPillText, filterPeriod === 'month' && styles.filterPillTextActive, isDark && filterPeriod !== 'month' && { color: themeColors.textSecondary }]}>
+              This Month
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterPill,
+              filterPeriod === 'week' && styles.filterPillActive,
+              isDark && filterPeriod !== 'week' && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder },
+            ]}
+            onPress={() => setFilterPeriod('week')}
+          >
+            <Text style={[styles.filterPillText, filterPeriod === 'week' && styles.filterPillTextActive, isDark && filterPeriod !== 'week' && { color: themeColors.textSecondary }]}>
+              This Week
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Header Summary Card */}
+        <Card style={[styles.headerCard, isDark && { backgroundColor: 'rgba(217, 119, 6, 0.12)', borderColor: 'rgba(217, 119, 6, 0.25)' }]}>
+          <Text style={[styles.reportTitle, isDark && { color: themeColors.text }]}>Advances Given Report</Text>
+          <Text style={[styles.reportPeriod, isDark && { color: '#FBBF24' }]}>
+            {getDateRange().label} · {advances.length} disbursement{advances.length === 1 ? '' : 's'}
+          </Text>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryLabel, isDark && { color: themeColors.textSecondary }]}>Total Given</Text>
+              <Text style={[styles.summaryValue, { color: isDark ? '#FBBF24' : colors.warning[600] }]}>
+                {formatCurrency(totalGiven)}
+              </Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryLabel, isDark && { color: themeColors.textSecondary }]}>Transactions</Text>
+              <Text style={[styles.summaryValue, isDark && { color: themeColors.text }]}>{advances.length}</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={[styles.summaryLabel, isDark && { color: themeColors.textSecondary }]}>Workers</Text>
+              <Text style={[styles.summaryValue, isDark && { color: themeColors.text }]}>{uniqueWorkersCount}</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Loading State */}
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary[500]} style={{ marginTop: spacing[8] }} />
+        ) : advances.length === 0 ? (
+          <Card style={[styles.emptyCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder }]}>
+            <Ionicons name="cash-outline" size={48} color={isDark ? themeColors.textMuted : colors.neutral[400]} />
+            <Text style={[styles.emptyText, isDark && { color: themeColors.textMuted }]}>
+              No advances given in this period
+            </Text>
+          </Card>
+        ) : (
+          advances.map((advance) => (
+            <Card key={advance.id} style={[styles.workerCard, isDark && { backgroundColor: themeColors.card, borderColor: themeColors.cardBorder, borderWidth: 1 }]}>
+              <View style={styles.workerHeader}>
+                <Avatar name={advance.worker_name} size="md" />
+                <View style={styles.workerInfo}>
+                  <Text style={[styles.workerName, isDark && { color: themeColors.text }]}>{advance.worker_name}</Text>
+                  <Text style={[styles.workerId, isDark && { color: themeColors.textMuted }]}>
+                    ID: {advance.employee_id} · {format(parseISO(advance.advance_date), 'dd MMM yyyy')}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={[styles.netPay, { color: isDark ? '#FBBF24' : colors.warning[600] }]}>
+                    {formatCurrency(advance.amount)}
+                  </Text>
+                  <View style={{ marginTop: 4 }}>
+                    <Badge
+                      label={advance.payment_method?.toUpperCase() || 'CASH'}
+                      variant={advance.payment_method === 'cash' ? 'success' : advance.payment_method === 'upi' ? 'info' : 'neutral'}
+                      size="sm"
+                    />
+                  </View>
+                </View>
+              </View>
+              {advance.reason ? (
+                <View style={[styles.advanceReasonBox, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
+                  <Text style={[styles.advanceReasonText, isDark && { color: themeColors.textSecondary }]}>
+                    Note: {advance.reason}
+                  </Text>
+                </View>
+              ) : null}
+            </Card>
+          ))
+        )}
+
+        {/* Export PDF Button */}
+        {!loading && advances.length > 0 && (
+          <View style={{ marginTop: spacing[4], marginBottom: spacing[8] }}>
+            <Button
+              title={exporting ? 'Generating PDF...' : 'Export Advances Given PDF'}
+              onPress={handleExportPDF}
+              icon={exporting ? undefined : 'document-text-outline'}
+              disabled={exporting}
+              fullWidth
             />
           </View>
         )}
@@ -1264,5 +1454,40 @@ const styles = StyleSheet.create({
     color: colors.neutral[700],
     marginVertical: 1,
   },
-
+  filterPillsContainer: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    marginBottom: spacing[4],
+  },
+  filterPill: {
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[4],
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.neutral[100],
+    borderWidth: 1,
+    borderColor: colors.neutral[200],
+  },
+  filterPillActive: {
+    backgroundColor: colors.primary[500],
+    borderColor: colors.primary[600],
+  },
+  filterPillText: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: colors.neutral[700],
+  },
+  filterPillTextActive: {
+    color: colors.white,
+  },
+  advanceReasonBox: {
+    backgroundColor: colors.neutral[50],
+    padding: spacing[2],
+    borderRadius: 6,
+    marginTop: spacing[2],
+  },
+  advanceReasonText: {
+    ...typography.caption,
+    color: colors.neutral[600],
+    fontStyle: 'italic',
+  },
 });

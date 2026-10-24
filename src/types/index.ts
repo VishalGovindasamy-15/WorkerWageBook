@@ -248,6 +248,14 @@ export type SalaryStackParamList = {
 export type ReportsStackParamList = {
   ReportsList: undefined;
   ReportDetail: { reportType: string };
+  WeeklyReport: undefined;
+  AttendanceReport: undefined;
+  AdvancesReport: undefined;
+  AdvancesGivenReport: undefined;
+  CashbookReport: undefined;
+  WorkerSummaryReport: undefined;
+  WeeklyAuditReport: undefined;
+  WorkerProfile: { workerId: number };
 };
 
 export type SettingsStackParamList = {

@@ -5,8 +5,9 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { format } from 'date-fns';
-import { getAllAsync, withTransaction } from '../database/database';
+import { getAllAsync, getFirstAsync, withTransaction } from '../database/database';
 import { settingsService } from './settingsService';
+import { workerService } from './workerService';
 
 export interface BackupData {
   metadata: {
@@ -290,5 +291,154 @@ export const backupService = {
       settlements: s[0]?.count || 0,
       auditLogs: a[0]?.count || 0,
     };
+  },
+
+  // Export workers to JSON file
+  async exportWorkersJson(): Promise<string> {
+    const workers = await workerService.getAll({});
+    const categories = await getAllAsync('SELECT * FROM categories');
+    const exportData = {
+      app: 'Worker WageBook',
+      export_type: 'workers',
+      version: 1,
+      exported_at: new Date().toISOString(),
+      categories,
+      workers,
+    };
+    const json = JSON.stringify(exportData, null, 2);
+    const filename = `WorkerWageBook_Workers_${format(new Date(), 'yyyy-MM-dd')}.json`;
+
+    if (Platform.OS === 'web') {
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return filename;
+    }
+
+    const fileUri = (FileSystem.cacheDirectory || FileSystem.documentDirectory || '') + filename;
+    await FileSystem.writeAsStringAsync(fileUri, json, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/json',
+        dialogTitle: 'Export Workers (JSON)',
+      });
+    }
+
+    return filename;
+  },
+
+  // Import workers from JSON string
+  async importWorkersFromJson(jsonString: string): Promise<{ success: number; failed: number; skipped: number; errors: string[] }> {
+    try {
+      const data = JSON.parse(jsonString);
+      const workersList = Array.isArray(data) ? data : data.workers;
+
+      if (!Array.isArray(workersList) || workersList.length === 0) {
+        return { success: 0, failed: 0, skipped: 0, errors: ['JSON file contains no worker records'] };
+      }
+
+      let success = 0;
+      let failed = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+
+      for (const w of workersList) {
+        try {
+          if (!w.name || typeof w.name !== 'string') {
+            failed++;
+            errors.push('Skipped worker with missing name');
+            continue;
+          }
+
+          // Check if worker with employee_id already exists
+          if (w.employee_id) {
+            const existing = await getFirstAsync('SELECT id FROM workers WHERE employee_id = ?', [w.employee_id]);
+            if (existing) {
+              skipped++;
+              continue;
+            }
+          }
+
+          await workerService.create({
+            name: w.name,
+            employee_id: w.employee_id,
+            phone: w.phone || undefined,
+            category_id: w.category_id || undefined,
+            daily_wage: typeof w.daily_wage === 'number' ? w.daily_wage : parseFloat(w.daily_wage) || 0,
+            overtime_rate: typeof w.overtime_rate === 'number' ? w.overtime_rate : parseFloat(w.overtime_rate) || 0,
+            overtime_type: w.overtime_type === 'multiplier' ? 'multiplier' : 'per_hour',
+            joining_date: w.joining_date || undefined,
+            notes: w.notes || undefined,
+          });
+          success++;
+        } catch (err: any) {
+          failed++;
+          errors.push(`Failed to import ${w.name}: ${err.message}`);
+        }
+      }
+
+      return { success, failed, skipped, errors };
+    } catch (err: any) {
+      return { success: 0, failed: 0, skipped: 0, errors: [err.message || 'Invalid JSON format'] };
+    }
+  },
+
+  // Pick and import workers JSON file
+  async pickAndImportWorkersJson(): Promise<{ success: number; failed: number; skipped: number; errors: string[] }> {
+    if (Platform.OS === 'web') {
+      return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.onchange = async (e: any) => {
+          const file = e.target.files?.[0];
+          if (!file) {
+            resolve({ success: 0, failed: 0, skipped: 0, errors: ['No file selected'] });
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = async (evt) => {
+            const content = evt.target?.result as string;
+            if (!content) {
+              resolve({ success: 0, failed: 0, skipped: 0, errors: ['File is empty'] });
+              return;
+            }
+            const res = await backupService.importWorkersFromJson(content);
+            resolve(res);
+          };
+          reader.onerror = () => {
+            resolve({ success: 0, failed: 0, skipped: 0, errors: ['Failed to read JSON file'] });
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      });
+    }
+
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return { success: 0, failed: 0, skipped: 0, errors: ['Import cancelled'] };
+      }
+
+      const fileUri = result.assets[0].uri;
+      const content = await FileSystem.readAsStringAsync(fileUri);
+      return await this.importWorkersFromJson(content);
+    } catch (err: any) {
+      return { success: 0, failed: 0, skipped: 0, errors: [err.message || 'Failed to pick file'] };
+    }
   },
 };
