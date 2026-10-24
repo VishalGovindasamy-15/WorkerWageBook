@@ -46,7 +46,6 @@ const WorkersStack = createNativeStackNavigator();
 const AttendanceStack = createNativeStackNavigator();
 const SalaryStack = createNativeStackNavigator();
 const ReportsStack = createNativeStackNavigator();
-const SettingsStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 
 function useDynamicScreenOptions() {
@@ -168,44 +167,6 @@ function ReportsStackNavigator() {
         options={{ title: 'Worker Profile' }} 
       />
     </ReportsStack.Navigator>
-  );
-}
-
-function SettingsStackNavigator() {
-  const screenOptions = useDynamicScreenOptions();
-  return (
-    <SettingsStack.Navigator screenOptions={screenOptions}>
-      <SettingsStack.Screen 
-        name="Settings" 
-        component={SettingsScreen} 
-        options={{ title: 'Settings' }} 
-      />
-      <SettingsStack.Screen 
-        name="BusinessProfile" 
-        component={BusinessProfileScreen} 
-        options={{ title: 'Business Profile' }} 
-      />
-      <SettingsStack.Screen 
-        name="ChangePin" 
-        component={ChangePinScreen} 
-        options={{ title: 'Change PIN' }} 
-      />
-      <SettingsStack.Screen 
-        name="SalaryRules" 
-        component={SalaryRulesScreen} 
-        options={{ title: 'Salary Calculation Rules' }} 
-      />
-      <SettingsStack.Screen 
-        name="CategoryManagement" 
-        component={CategoryManagementScreen} 
-        options={{ title: 'Manage Categories' }} 
-      />
-      <SettingsStack.Screen 
-        name="GoogleDriveBackup" 
-        component={GoogleDriveBackupScreen} 
-        options={{ title: 'Google Drive Backup' }} 
-      />
-    </SettingsStack.Navigator>
   );
 }
 

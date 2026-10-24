@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -57,10 +58,21 @@ export function RecordAdvanceScreen({ navigation, route }: any) {
   };
 
   const loadOutstandingBalance = async () => {
-    if (!selectedWorkerId) return;
-    const balance = await advanceService.getOutstandingBalance(selectedWorkerId);
-    setOutstandingBalance(balance);
+    if (!selectedWorkerId) {
+      setOutstandingBalance(0);
+      return;
+    }
+    try {
+      const balance = await advanceService.getOutstandingBalance(selectedWorkerId);
+      setOutstandingBalance(balance);
+    } catch (err) {
+      console.warn('Failed to load outstanding balance:', err);
+    }
   };
+
+  useEffect(() => {
+    loadOutstandingBalance();
+  }, [selectedWorkerId]);
 
   const selectedWorker = workers.find((w) => w.id === selectedWorkerId);
 
@@ -75,13 +87,15 @@ export function RecordAdvanceScreen({ navigation, route }: any) {
 
   const handleSave = async () => {
     if (!selectedWorkerId) {
-      Alert.alert('Error', 'Please select a worker');
+      if (Platform.OS === 'web') window.alert('Please select a worker');
+      else Alert.alert('Error', 'Please select a worker');
       return;
     }
 
     const amountNum = parseFloat(amount);
     if (!amount || isNaN(amountNum) || amountNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      if (Platform.OS === 'web') window.alert('Please enter a valid amount');
+      else Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
 
@@ -98,7 +112,8 @@ export function RecordAdvanceScreen({ navigation, route }: any) {
       showToast(`Advance of ${formatCurrency(amountNum)} recorded`, 'success');
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to record advance');
+      if (Platform.OS === 'web') window.alert(error.message || 'Failed to record advance');
+      else Alert.alert('Error', error.message || 'Failed to record advance');
     } finally {
       setSaving(false);
     }

@@ -16,7 +16,7 @@ import { auditService } from '../../services/auditService';
 import { pdfService } from '../../services/pdfService';
 import { settingsService } from '../../services/settingsService';
 import { useAppStore } from '../../stores/appStore';
-import { formatCurrency, getWeekLabel } from '../../utils/helpers';
+import { formatCurrency, getWeekLabel, parseDbTimestamp } from '../../utils/helpers';
 import { SalarySettlement, SettlementItem, Attendance, Worker, Advance, Category, AuditLog } from '../../types';
 
 // ============================================================
@@ -232,7 +232,19 @@ export function WeeklyReportScreen({ navigation }: any) {
         {settlements.length === 0 && (
           <Card style={styles.emptyCard}>
             <Ionicons name="document-text-outline" size={48} color={isDark ? themeColors.textMuted : colors.neutral[300]} />
-            <Text style={[styles.emptyText, isDark && { color: themeColors.textMuted }]}>No settlements for this week</Text>
+            <Text style={[styles.emptyText, isDark && { color: themeColors.text }, { fontWeight: '600', marginTop: spacing[2] }]}>
+              No settlements for this week
+            </Text>
+            <Text style={[{ textAlign: 'center', fontSize: 13, marginTop: spacing[1], marginBottom: spacing[3] }, { color: isDark ? themeColors.textMuted : colors.neutral[500] }]}>
+              Salaries for this week have not been settled yet. Settle weekly salaries to generate reports.
+            </Text>
+            <Button
+              title="Go to Weekly Salary to Settle"
+              onPress={() => navigation.navigate('SalaryTab', { screen: 'WeeklySalary' })}
+              variant="secondary"
+              size="sm"
+              icon="wallet-outline"
+            />
           </Card>
         )}
 
@@ -397,7 +409,7 @@ export function AttendanceReportScreen() {
                         isDark && { backgroundColor: themeColors.surface, borderColor: themeColors.border, borderWidth: 1 },
                       ]}
                     >
-                      <Text style={[styles.dayDate, isDark && { color: themeColors.textSecondary }]}>{format(new Date(att.work_date), 'dd')}</Text>
+                      <Text style={[styles.dayDate, isDark && { color: themeColors.textSecondary }]}>{format(parseDbTimestamp(att.work_date), 'dd')}</Text>
                       <Ionicons name={icon.name} size={20} color={icon.color} />
                       {att.overtime_hours > 0 && (
                         <Text style={[styles.overtimeText, isDark && { color: '#60A5FA' }]}>+{att.overtime_hours}h</Text>
@@ -841,7 +853,7 @@ export function CashbookScreen() {
                         Advance - {worker?.name || 'Unknown'}
                       </Text>
                       <Text style={[styles.transactionDate, isDark && { color: themeColors.textMuted }]}>
-                        {format(new Date(advance.advance_date), 'MMM dd, yyyy')}
+                        {format(parseDbTimestamp(advance.advance_date), 'MMM dd, yyyy')}
                       </Text>
                     </View>
                     <Text style={[styles.transactionAmount, { color: isDark ? '#F87171' : colors.danger[600] }]}>
@@ -874,7 +886,7 @@ export function CashbookScreen() {
                         Salary - {worker?.name || 'Unknown'}
                       </Text>
                       <Text style={[styles.transactionDate, isDark && { color: themeColors.textMuted }]}>
-                        {format(new Date(settlement.confirmed_at || settlement.created_at), 'MMM dd, yyyy')}
+                        {format(parseDbTimestamp(settlement.confirmed_at || settlement.created_at), 'MMM dd, yyyy')}
                       </Text>
                     </View>
                     <Text style={[styles.transactionAmount, { color: isDark ? '#F87171' : colors.danger[600] }]}>

@@ -17,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography, shadows, borderRadius } from '../../constants/theme';
 import { Card, Button, TextInput } from '../../components/ui';
 import { settingsService } from '../../services/settingsService';
-import { csvService } from '../../services/csvService';
 import { backupService } from '../../services/backupService';
 import { factoryResetDatabase } from '../../database/database';
 import { useAppStore } from '../../stores/appStore';

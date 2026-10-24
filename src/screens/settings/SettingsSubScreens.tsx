@@ -5,8 +5,8 @@ import { Platform, ActivityIndicator } from 'react-native';
 // Worker WageBook - Settings Sub-Screens
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
-import { colors, spacing, typography } from '../../constants/theme';
+import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { colors, spacing, typography, borderRadius } from '../../constants/theme';
 import { TextInput, Button, Card } from '../../components/ui';
 import { settingsService } from '../../services/settingsService';
 import { salaryService } from '../../services/salaryService';
@@ -168,6 +168,19 @@ export function SalaryRulesScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Local buffered string state for seamless typing (prevents decimal erasing bug)
+  const [halfDayMult, setHalfDayMult] = useState('0.5');
+  const [holidayPayMult, setHolidayPayMult] = useState('0.0');
+  const [weeklyOffDay, setWeeklyOffDay] = useState('sunday');
+  const [weeklyOffPayMult, setWeeklyOffPayMult] = useState('0.0');
+  const [paidLeavePerMonth, setPaidLeavePerMonth] = useState('0');
+  const [overtimeDefaultMult, setOvertimeDefaultMult] = useState('1.0');
+  const [overtimeRounding, setOvertimeRounding] = useState<'exact' | 'nearest_half' | 'nearest_hour'>('exact');
+  const [advanceRecoveryMode, setAdvanceRecoveryMode] = useState<'full' | 'partial'>('full');
+  const [advanceRecoveryMaxPercent, setAdvanceRecoveryMaxPercent] = useState('100');
+  const [carryForward, setCarryForward] = useState<number>(1);
+  const [monetaryRounding, setMonetaryRounding] = useState<'paisa' | 'rupee'>('paisa');
+
   useEffect(() => {
     loadRules();
   }, []);
@@ -176,6 +189,17 @@ export function SalaryRulesScreen({ navigation }: any) {
     setLoading(true);
     const r = await salaryService.getRules();
     setRules(r);
+    setHalfDayMult(String(r.half_day_multiplier ?? 0.5));
+    setHolidayPayMult(String(r.holiday_pay_multiplier ?? 0.0));
+    setWeeklyOffDay(r.weekly_off_day || 'sunday');
+    setWeeklyOffPayMult(String(r.weekly_off_pay_multiplier ?? 0.0));
+    setPaidLeavePerMonth(String(r.paid_leave_allowed_per_month ?? 0));
+    setOvertimeDefaultMult(String(r.overtime_default_multiplier ?? 1.0));
+    setOvertimeRounding((r.overtime_rounding as any) || 'exact');
+    setAdvanceRecoveryMode((r.advance_recovery_mode as any) || 'full');
+    setAdvanceRecoveryMaxPercent(String(r.advance_recovery_max_percent ?? 100));
+    setCarryForward(r.carry_forward_unrecovered_advances ?? 1);
+    setMonetaryRounding((r.monetary_rounding as any) || 'paisa');
     setLoading(false);
   };
 
@@ -184,11 +208,34 @@ export function SalaryRulesScreen({ navigation }: any) {
 
     setSaving(true);
     try {
-      await salaryService.updateRules(rules);
-      Alert.alert('Success', 'Salary calculation rules updated');
+      const updatedRules: SalaryCalculationRules = {
+        ...rules,
+        half_day_multiplier: parseFloat(halfDayMult) || 0,
+        holiday_pay_multiplier: parseFloat(holidayPayMult) || 0,
+        weekly_off_day: weeklyOffDay.trim().toLowerCase() || 'sunday',
+        weekly_off_pay_multiplier: parseFloat(weeklyOffPayMult) || 0,
+        paid_leave_allowed_per_month: parseInt(paidLeavePerMonth, 10) || 0,
+        overtime_default_multiplier: parseFloat(overtimeDefaultMult) || 1.0,
+        overtime_rounding: overtimeRounding,
+        advance_recovery_mode: advanceRecoveryMode,
+        advance_recovery_max_percent: parseFloat(advanceRecoveryMaxPercent) || 100,
+        carry_forward_unrecovered_advances: carryForward ? 1 : 0,
+        monetary_rounding: monetaryRounding,
+      };
+
+      await salaryService.updateRules(updatedRules);
+      if (Platform.OS === 'web') {
+        window.alert('Salary calculation rules updated successfully');
+      } else {
+        Alert.alert('Success', 'Salary calculation rules updated');
+      }
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save rules');
+      if (Platform.OS === 'web') {
+        window.alert(error.message || 'Failed to save rules');
+      } else {
+        Alert.alert('Error', error.message || 'Failed to save rules');
+      }
     } finally {
       setSaving(false);
     }
@@ -209,47 +256,39 @@ export function SalaryRulesScreen({ navigation }: any) {
 
         <TextInput
           label="Half-day Multiplier"
-          value={rules.half_day_multiplier.toString()}
-          onChangeText={(text) =>
-            setRules({ ...rules, half_day_multiplier: parseFloat(text) || 0 })
-          }
+          value={halfDayMult}
+          onChangeText={setHalfDayMult}
           keyboardType="numeric"
           helperText="0.5 = half of daily wage, 1.0 = full wage"
         />
 
         <TextInput
           label="Holiday Pay Multiplier"
-          value={rules.holiday_pay_multiplier.toString()}
-          onChangeText={(text) =>
-            setRules({ ...rules, holiday_pay_multiplier: parseFloat(text) || 0 })
-          }
+          value={holidayPayMult}
+          onChangeText={setHolidayPayMult}
           keyboardType="numeric"
           helperText="0.0 = no pay on holidays, 1.0 = full pay"
         />
 
         <TextInput
           label="Weekly Off Day"
-          value={rules.weekly_off_day}
-          onChangeText={(text) => setRules({ ...rules, weekly_off_day: text })}
-          helperText="e.g., sunday, monday"
+          value={weeklyOffDay}
+          onChangeText={setWeeklyOffDay}
+          helperText="e.g. sunday, monday"
         />
 
         <TextInput
           label="Weekly Off Pay Multiplier"
-          value={rules.weekly_off_pay_multiplier.toString()}
-          onChangeText={(text) =>
-            setRules({ ...rules, weekly_off_pay_multiplier: parseFloat(text) || 0 })
-          }
+          value={weeklyOffPayMult}
+          onChangeText={setWeeklyOffPayMult}
           keyboardType="numeric"
           helperText="0.0 = no pay, 1.0 = full pay"
         />
 
         <TextInput
           label="Paid Leave Allowed Per Month"
-          value={rules.paid_leave_allowed_per_month.toString()}
-          onChangeText={(text) =>
-            setRules({ ...rules, paid_leave_allowed_per_month: parseInt(text) || 0 })
-          }
+          value={paidLeavePerMonth}
+          onChangeText={setPaidLeavePerMonth}
           keyboardType="number-pad"
           helperText="0 = all leave is unpaid"
         />
@@ -258,62 +297,142 @@ export function SalaryRulesScreen({ navigation }: any) {
 
         <TextInput
           label="Overtime Default Multiplier"
-          value={rules.overtime_default_multiplier.toString()}
-          onChangeText={(text) =>
-            setRules({ ...rules, overtime_default_multiplier: parseFloat(text) || 0 })
-          }
+          value={overtimeDefaultMult}
+          onChangeText={setOvertimeDefaultMult}
           keyboardType="numeric"
-          helperText="Multiplier for hourly wage (used in multiplier mode)"
+          helperText="Multiplier for hourly wage (e.g. 1.0 or 1.5)"
         />
 
-        <TextInput
-          label="Overtime Rounding"
-          value={rules.overtime_rounding}
-          onChangeText={(text) =>
-            setRules({ ...rules, overtime_rounding: text as any })
-          }
-          helperText="Options: exact, nearest_half, nearest_hour"
-        />
+        <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>Overtime Rounding</Text>
+        <View style={styles.chipsRow}>
+          {([
+            { id: 'exact', label: 'Exact' },
+            { id: 'nearest_half', label: 'Nearest 30m' },
+            { id: 'nearest_hour', label: 'Nearest 1h' },
+          ] as const).map((opt) => {
+            const active = overtimeRounding === opt.id;
+            return (
+              <TouchableOpacity
+                key={opt.id}
+                style={[
+                  styles.chip,
+                  isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                  active && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.chipActive),
+                ]}
+                onPress={() => setOvertimeRounding(opt.id)}
+              >
+                <Text style={[
+                  styles.chipText,
+                  isDark && { color: themeColors.textSecondary },
+                  active && (isDark ? { color: '#60A5FA' } : styles.chipTextActive),
+                ]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>ADVANCE RECOVERY</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing[4] }, isDark && { color: themeColors.textMuted }]}>ADVANCE RECOVERY</Text>
 
-        <TextInput
-          label="Recovery Mode"
-          value={rules.advance_recovery_mode}
-          onChangeText={(text) =>
-            setRules({ ...rules, advance_recovery_mode: text as any })
-          }
-          helperText="Options: full (deduct all), partial (deduct up to %)"
-        />
+        <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>Recovery Mode</Text>
+        <View style={styles.chipsRow}>
+          {([
+            { id: 'full', label: 'Full (100% of advance)' },
+            { id: 'partial', label: 'Partial (% capped)' },
+          ] as const).map((opt) => {
+            const active = advanceRecoveryMode === opt.id;
+            return (
+              <TouchableOpacity
+                key={opt.id}
+                style={[
+                  styles.chip,
+                  isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                  active && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.chipActive),
+                ]}
+                onPress={() => setAdvanceRecoveryMode(opt.id)}
+              >
+                <Text style={[
+                  styles.chipText,
+                  isDark && { color: themeColors.textSecondary },
+                  active && (isDark ? { color: '#60A5FA' } : styles.chipTextActive),
+                ]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        <TextInput
-          label="Max Recovery Percent"
-          value={rules.advance_recovery_max_percent.toString()}
-          onChangeText={(text) =>
-            setRules({ ...rules, advance_recovery_max_percent: parseFloat(text) || 0 })
-          }
-          keyboardType="numeric"
-          helperText="Max % of earnings to deduct (for partial mode)"
-        />
+        {advanceRecoveryMode === 'partial' && (
+          <TextInput
+            label="Max Recovery Percent (%)"
+            value={advanceRecoveryMaxPercent}
+            onChangeText={setAdvanceRecoveryMaxPercent}
+            keyboardType="numeric"
+            helperText="Max % of gross earnings to deduct towards advance (e.g. 50)"
+          />
+        )}
 
-        <TextInput
-          label="Carry Forward Unrecovered"
-          value={rules.carry_forward_unrecovered_advances.toString()}
-          onChangeText={(text) =>
-            setRules({ ...rules, carry_forward_unrecovered_advances: parseInt(text) || 0 })
-          }
-          keyboardType="number-pad"
-          helperText="1 = yes, carry to next week; 0 = no, write off"
-        />
+        <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>Carry Forward Unrecovered Advances</Text>
+        <View style={styles.chipsRow}>
+          {[
+            { val: 1, label: 'Yes (Carry to Next Week)' },
+            { val: 0, label: 'No (Write Off Balance)' },
+          ].map((opt) => {
+            const active = carryForward === opt.val;
+            return (
+              <TouchableOpacity
+                key={opt.val}
+                style={[
+                  styles.chip,
+                  isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                  active && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.chipActive),
+                ]}
+                onPress={() => setCarryForward(opt.val)}
+              >
+                <Text style={[
+                  styles.chipText,
+                  isDark && { color: themeColors.textSecondary },
+                  active && (isDark ? { color: '#60A5FA' } : styles.chipTextActive),
+                ]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing[6] }, isDark && { color: themeColors.textMuted }]}>ROUNDING</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing[4] }, isDark && { color: themeColors.textMuted }]}>ROUNDING</Text>
 
-        <TextInput
-          label="Monetary Rounding"
-          value={rules.monetary_rounding}
-          onChangeText={(text) => setRules({ ...rules, monetary_rounding: text as any })}
-          helperText="Options: paisa (2 decimals), rupee (0 decimals)"
-        />
+        <Text style={[styles.inputLabel, isDark && { color: themeColors.textSecondary }]}>Monetary Rounding</Text>
+        <View style={styles.chipsRow}>
+          {([
+            { id: 'paisa', label: 'Paisa (2 Decimal Places)' },
+            { id: 'rupee', label: 'Rupee (Whole Amount)' },
+          ] as const).map((opt) => {
+            const active = monetaryRounding === opt.id;
+            return (
+              <TouchableOpacity
+                key={opt.id}
+                style={[
+                  styles.chip,
+                  isDark && { backgroundColor: themeColors.card, borderColor: themeColors.border },
+                  active && (isDark ? { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: colors.primary[500] } : styles.chipActive),
+                ]}
+                onPress={() => setMonetaryRounding(opt.id)}
+              >
+                <Text style={[
+                  styles.chipText,
+                  isDark && { color: themeColors.textSecondary },
+                  active && (isDark ? { color: '#60A5FA' } : styles.chipTextActive),
+                ]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         <Button
           title={saving ? 'Saving...' : 'Save Rules'}
@@ -641,5 +760,36 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 4,
   },
-
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    marginBottom: spacing[4],
+  },
+  chip: {
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.neutral[100],
+    borderWidth: 1,
+    borderColor: colors.neutral[300],
+  },
+  chipActive: {
+    backgroundColor: colors.primary[50],
+    borderColor: colors.primary[600],
+  },
+  chipText: {
+    ...typography.bodySmall,
+    color: colors.neutral[700],
+    fontWeight: '500',
+  },
+  chipTextActive: {
+    color: colors.primary[600],
+    fontWeight: '700',
+  },
+  inputLabel: {
+    ...typography.label,
+    color: colors.neutral[700],
+    marginBottom: spacing[2],
+  },
 });

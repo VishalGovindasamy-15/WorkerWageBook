@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { Appearance } from 'react-native';
+import { format } from 'date-fns';
 import { WeekRange, Category, SalaryCalculationRules } from '../types';
 import { getWeekRange, getWeekLabel } from '../utils/helpers';
 import { ThemeMode, ThemeColors, lightTheme, darkTheme } from '../constants/theme';
@@ -93,8 +94,8 @@ export const useAppStore = create<AppState>((set, get) => {
   currentWeek: (() => {
     const { start, end } = getWeekRange(new Date(), 1);
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0],
+      start: format(start, 'yyyy-MM-dd'),
+      end: format(end, 'yyyy-MM-dd'),
       label: getWeekLabel(new Date(), 1),
     };
   })(),
@@ -104,8 +105,8 @@ export const useAppStore = create<AppState>((set, get) => {
     set({
       currentWeekDate: date,
       currentWeek: {
-        start: start.toISOString().split('T')[0],
-        end: end.toISOString().split('T')[0],
+        start: format(start, 'yyyy-MM-dd'),
+        end: format(end, 'yyyy-MM-dd'),
         label: getWeekLabel(date, weekStartsOn),
       },
     });

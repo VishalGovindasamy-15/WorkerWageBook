@@ -172,10 +172,31 @@ export function WorkerProfileScreen({ route, navigation }: any) {
     }
   };
 
-  const handleDeleteWorkerClick = () => {
-    setDeletePin('');
-    setDeletePinError('');
-    setDeleteModalVisible(true);
+  const handleDeleteWorkerClick = async () => {
+    if (!worker) return;
+    const isSet = await settingsService.isPinSet();
+    if (isSet) {
+      setDeletePin('');
+      setDeletePinError('');
+      setDeleteModalVisible(true);
+    } else {
+      const confirmMsg = `Are you sure you want to permanently delete ${worker.name}? All associated attendance records, advances, and salary history will be removed.`;
+      if (Platform.OS === 'web') {
+        if (window.confirm(`Delete Worker\n\n${confirmMsg}`)) {
+          await executeDeleteWorker();
+        }
+        return;
+      }
+
+      Alert.alert(
+        'Delete Worker',
+        confirmMsg,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: executeDeleteWorker },
+        ]
+      );
+    }
   };
 
   const handleConfirmDeleteWithPin = async () => {
@@ -198,9 +219,13 @@ export function WorkerProfileScreen({ route, navigation }: any) {
       await workerService.delete(workerId);
       showToast('Worker deleted permanently', 'success');
       navigation.goBack();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete worker:', err);
-      Alert.alert('Error', 'Failed to delete worker. Please try again.');
+      if (Platform.OS === 'web') {
+        window.alert(err.message || 'Failed to delete worker. Please try again.');
+      } else {
+        Alert.alert('Error', err.message || 'Failed to delete worker. Please try again.');
+      }
     } finally {
       setIsDeleting(false);
     }

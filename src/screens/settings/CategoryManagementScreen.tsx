@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   TextInput as RNTextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography, shadows } from '../../constants/theme';
@@ -26,6 +27,14 @@ export function CategoryManagementScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  const showAlert = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title ? `${title}: ` : ''}${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   useEffect(() => {
     loadCategories();
   }, []);
@@ -39,7 +48,7 @@ export function CategoryManagementScreen() {
 
   const handleAdd = async () => {
     if (!newCategoryName.trim()) {
-      Alert.alert('Error', 'Please enter a category name');
+      showAlert('Error', 'Please enter a category name');
       return;
     }
 
@@ -49,13 +58,13 @@ export function CategoryManagementScreen() {
       setShowAddModal(false);
       loadCategories();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create category');
+      showAlert('Error', error.message || 'Failed to create category');
     }
   };
 
   const handleEdit = async (id: number) => {
     if (!editingName.trim()) {
-      Alert.alert('Error', 'Please enter a category name');
+      showAlert('Error', 'Please enter a category name');
       return;
     }
 
@@ -65,16 +74,27 @@ export function CategoryManagementScreen() {
       setEditingName('');
       loadCategories();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to rename category');
+      showAlert('Error', error.message || 'Failed to rename category');
     }
   };
 
   const handleDelete = (category: Category & { worker_count: number }) => {
     if (category.worker_count > 0) {
-      Alert.alert(
+      showAlert(
         'Cannot Delete',
         `This category has ${category.worker_count} worker(s) assigned. Please reassign them first.`
       );
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Are you sure you want to delete "${category.name}"?`)) {
+        categoryService.deactivate(category.id).then(() => {
+          loadCategories();
+        }).catch((error: any) => {
+          showAlert('Error', error.message || 'Failed to delete category');
+        });
+      }
       return;
     }
 
@@ -91,7 +111,7 @@ export function CategoryManagementScreen() {
               await categoryService.deactivate(category.id);
               loadCategories();
             } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete category');
+              showAlert('Error', error.message || 'Failed to delete category');
             }
           },
         },

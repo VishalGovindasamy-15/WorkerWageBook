@@ -25,6 +25,9 @@ export function parseDbTimestamp(date: string | Date | null | undefined): Date {
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s)) {
     return new Date(s + 'Z');
   }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return parseISO(s);
+  }
   return new Date(s);
 }
 
