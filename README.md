@@ -1,4 +1,4 @@
-# Worker WageBook 📱💼
+# Worker WageBook 
 
 <div align="center">
   <img src="./assets/logo.png" alt="Worker WageBook Logo" width="120" />
